@@ -1,0 +1,162 @@
+<html>
+  <head>
+  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <!--Load the AJAX API--><script src="https://www.gstatic.com/firebasejs/3.2.0/firebase.js"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<script src="script.js"></script>
+<script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
+
+  </head>
+	<body>
+	<div class="w3-container" style="text-align:center" >
+		<div style = "width: 600px;margin:50px auto;text-align:left;border:2px solid grey;background-color:black;">
+			<div style="width:100%;color:white;padding:10px;"><h2>COMP 3008 Random Password Generator</h2></div>
+			<div style="padding:10px 30px 10px 30px ;background-color:white;">
+				
+				<!-- FIRST "PAGE" USER SEES -->
+				<div id="introduction">
+					<p>Welcome User.</p>
+					<p>You will be assigned 3 unique passwords, one for your email, banking and shopping.
+					For each password, you will be presented with 
+					7 unique sets of words total, each composing of 8 words, and you will be assigned to select one of them.
+					Which words you select from each set will be your password. The order of the sets and which
+					words on the sets appear will remain the same each time. This scheme aims to take advantage of your
+					ability to recognize familiar words.</p>
+					<br>
+					<p>Anytime you are ready, click the button below to generate your passwords!</p>
+					<button  id ="start-process" class="w3-button w3-teal">Start!</button>
+					<br>
+				</div>
+				
+				<!-- EMAIL "PAGE" USER SEES -->
+				<div id = "email-field" style="display:none;">
+					<h3>Email Password Creation:</h3>
+					<div class ="instructions">
+						<p>
+						Below is one of the sets of words composing your password. The word in the blackened slice
+						will be the word you are supposed to select when presented with this set. You can select the
+						word by clicking on the slice containing the word, or by pressing the arrow keys that would
+						correspond to that slice.</p>
+						<p>If you select the wrong word, you will have to start over at the first set again.</p>
+					</div>
+					
+					<!--will contain the chart--->
+					<div id="email_chart_div" style="width:400; height:300;margin:0 auto;"></div>
+						
+					<p class="failed-pwd" style="display:none">
+					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<p class="success-pwd" style="display:none">
+					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
+					Move on to the next password.</p>
+					<button class="try-pwd" style="display:none">Try again!</button>
+					<button class="save-pwd" style="display:none">Keep Password</button>					
+				</div>
+				
+				
+				<!-- BANK "PAGE" USER SEES -->
+				<div id = "bank-field" style="display:none;">
+					<h3>Banking Password Creation:</h3>
+					<div class ="instructions">
+						<p>
+						Below is one of the sets of words composing your password. The word in the blackened slice
+						will be the word you are supposed to select when presented with this set. You can select the
+						word by clicking on the slice containing the word, or by pressing the arrow keys that would
+						correspond to that slice.</p>
+						<p>If you select the wrong word, you will have to start over at the first set again.</p>
+					</div>
+					
+					<!--will contain the chart--->
+					<div id="bank_chart_div" style="width:400; height:300;margin:0 auto;"></div>
+						
+					<p class="failed-pwd" style="display:none">
+					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<p class="success-pwd" style="display:none">
+					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
+					Move on to the next password.</p>
+					<button class="try-pwd" style="display:none">Try again!</button>
+					<button class="save-pwd" style="display:none">Keep Password</button>					
+				</div>
+				
+				<!-- SHOP "PAGE" USER SEES -->
+				<div id = "shop-field" style="display:none;">
+					<h3>Shopping Password Creation:</h3>
+					<div class ="instructions">
+						<p>
+						Below is one of the sets of words composing your password. The word in the blackened slice
+						will be the word you are supposed to select when presented with this set. You can select the
+						word by clicking on the slice containing the word, or by pressing the arrow keys that would
+						correspond to that slice.</p>
+						<p>If you select the wrong word, you will have to start over at the first set again.</p>
+					</div>
+					
+					<!--will contain the chart--->
+					<div id="shop_chart_div" style="width:400; height:300;margin:0 auto;"></div>
+						
+					<p class="failed-pwd" style="display:none">
+					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<p class="success-pwd" style="display:none">
+					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
+					Move on to the next password.</p>
+					<button class="try-pwd" style="display:none">Try again!</button>
+					<button class="save-pwd" style="display:none">Keep Password</button>					
+				</div>
+				
+				
+				<!--TESTING "PAGE" USER SEES -->
+				<div id="test-field" style="display:none">
+					<h3>Testing your memory of the passwords:</h3>
+					<div id = "testing-intro">
+						<div id = "test-instructions">
+							<p>
+							Test to see if you remember your passwords. You will be asked to enter all your passwords in a random order.
+							You will have 3 attempts to enter your password for each. If you fail entering the one of the passwords 3 times,
+							you will still be able to attempt to enter your other passwords too, until you fail them 3 times as well.
+							</p>
+						</div>
+					</div>	
+						<!--will contain the chart--->
+						<div id="test_chart_div" style="width:400; height:300;"></div>
+						
+						<!--says status of the password: failed or success, and remaining attempts left-->
+						<p>Attempted <span  id="testing-attempts">0</span> times.</p>
+						<p id="failed-pwd-test" style="display:none">
+						You selected the wrong word. Failed password attempt.</p>
+						<p id="success-pwd-test" style="display:none">
+						Successful password attempt.</p>
+						<button id="try-test" style="display:none">Try again!</button>
+						<div id ="test-pwd-prompt"  style="display:none">
+							<p id="test-success-indv" style="display:none">You can now proceed to test the other passwords.</p>
+							<p id="test-failed-indv" style="display:none">You have used up all possible failed attempts.</p>
+							<p>Proceed to testing the next password</p>
+							<!--show button when success, or exceeded fail limit--->
+							<button id="test-next-pwd">Test Next Password!</button>
+						</div>
+					
+					
+					
+					
+				</div>
+				
+				<!---LAST "PAGE" USER SEES --->
+				<div id="summary-field" style="display:none">
+					<h3>Password Testing Completed:</h3>
+						<p>
+						Thank you for trying our software. Here are a few statistics:
+						</p>
+						
+						<div id="user-statistics">
+							
+						
+						</div>
+				</div>
+				
+				
+				<!---<div id="log">ss</div>--->
+
+				
+			</div>
+		</div>
+	</div>
+  </body>
+</html>
