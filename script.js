@@ -466,6 +466,7 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 				   pieSliceText: 'label',
 				   legend: 'none',
 				   pieStartAngle: -115,
+		       tooltip: {trigger: 'none'},
 				   slices: sliceStyle};
 	
 	// Instantiate and draw our chart, passing in some options.
