@@ -1,0 +1,135 @@
+{
+  "listValues" : {
+    "a" : {
+      "0" : "aim",
+      "1" : "apple",
+      "2" : "axe",
+      "3" : "art",
+      "4" : "ammo",
+      "5" : "annoy",
+      "6" : "avail",
+      "7" : "army",
+      "8" : "amulet",
+      "count" : 9
+    },
+    "b" : {
+      "0" : "bad",
+      "1" : "boom",
+      "2" : "bell",
+      "3" : "brain",
+      "4" : "bride",
+      "5" : "box",
+      "6" : "buff",
+      "7" : "brawn",
+      "8" : "bill",
+      "count" : 9
+    },
+    "c" : {
+      "0" : "car",
+      "1" : "cool",
+      "2" : "clam",
+      "3" : "cradle",
+      "4" : "coot",
+      "5" : "clutch",
+      "6" : "cease",
+      "7" : "crew",
+      "8" : "camel",
+      "count" : 9
+    },
+    "d" : {
+      "0" : "drama",
+      "1" : "drop",
+      "2" : "dry",
+      "3" : "dirt",
+      "4" : "dawn",
+      "5" : "dress",
+      "6" : "dice",
+      "7" : "dentist",
+      "8" : "doctor",
+      "count" : 9
+    },
+    "e" : {
+      "0" : "ever",
+      "1" : "err",
+      "2" : "ease",
+      "3" : "excite",
+      "4" : "effort",
+      "5" : "ember",
+      "6" : "edit",
+      "7" : "end",
+      "8" : "ew",
+      "count" : 9
+    },
+    "f" : {
+      "0" : "fox",
+      "1" : "fun",
+      "2" : "fido",
+      "3" : "first",
+      "4" : "fort",
+      "5" : "fern",
+      "6" : "friend",
+      "7" : "flush",
+      "8" : "fish",
+      "count" : 9
+    },
+    "g" : {
+      "0" : "gross",
+      "1" : "gloom",
+      "2" : "game",
+      "3" : "guard",
+      "4" : "glory",
+      "5" : "gust",
+      "6" : "grain",
+      "7" : "guess",
+      "8" : "grill",
+      "count" : 9
+    },
+    "h" : {
+      "0" : "hot",
+      "1" : "hum",
+      "2" : "hue",
+      "3" : "herd",
+      "4" : "hex",
+      "5" : "hash",
+      "6" : "heal",
+      "7" : "heart",
+      "8" : "help",
+      "count" : 9
+    },
+    "i" : {
+      "0" : "ill",
+      "1" : "ip",
+      "2" : "iffy",
+      "3" : "image",
+      "4" : "int",
+      "5" : "illegal",
+      "6" : "isolate",
+      "7" : "isle",
+      "8" : "item",
+      "count" : 9
+    },
+    "j" : {
+      "0" : "jar",
+      "1" : "jump",
+      "2" : "jig",
+      "3" : "jolly",
+      "4" : "jail",
+      "5" : "jade",
+      "6" : "jest",
+      "7" : "jam",
+      "8" : "job",
+      "count" : 9
+    }
+  },
+  "statistics" : {
+    "practice_numFailures" : [ 7, 0, 0 ],
+    "practice_numLogins" : [ 0, 12, 11 ],
+    "practice_numRetries" : [ 12, 5, 0 ],
+    "practice_numSuccesses" : [ 0, 0, 77 ],
+    "test_numFailures" : [ 3, 5, 0 ],
+    "test_numLogins" : [ 8, 7, 7 ],
+    "test_numRetries" : [ 2, 0, 0 ],
+    "test_numSuccesses" : [ 66, 65, 52 ],
+    "userCount" : 22
+  }
+}

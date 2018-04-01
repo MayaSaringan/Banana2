@@ -8,7 +8,7 @@
  *  Script that implements the password scheme, as well as communicates
  *  with a database to store the password data.
  *  
- *  Updated: March 31, 2018
+ *  Updated: April 1, 2018
 */
 
 /* CONSTANTS================ */
@@ -70,17 +70,32 @@ var user_id = null;
 
 /* STATISTICS */
 var userCount = 0;
-var gen_startDates = {0:null,1:null,2:null};
-var gen_endDates = {0:null, 1:null,2:null};
 //var gen_numAttempts = {0:0,1:0,2:0};
-var gen_numSuccesses = {0:0,1:0,2:0};
-var gen_numFailures = {0:0,1:0,2:0};
+var practice_numSuccesses = {0:0,1:0,2:0};
+var practice_numFailures  = {0:0,1:0,2:0};
+var practice_numRetries  ={0:0,1:0,2:0};
+var practice_numLogins  ={0:0,1:0,2:0};
+//test
+var test_numSuccesses = {0:0,1:0,2:0};
+var test_numFailures  = {0:0,1:0,2:0};
+var test_numRetries   = {0:0,1:0,2:0};
+var test_numLogins    = {0:0,1:0,2:0};
+
+var I_practice_numSuccesses = {0:0,1:0,2:0};
+var I_practice_numFailures  ={0:0,1:0,2:0};
+var I_practice_numRetries  = {0:0,1:0,2:0};
+var I_practice_numLogins  = {0:0,1:0,2:0};
+//test
+var I_test_numSuccesses = {0:0,1:0,2:0};
+var I_test_numFailures  = {0:0,1:0,2:0};
+var I_test_numRetries   = {0:0,1:0,2:0};
+var I_test_numLogins    = {0:0,1:0,2:0};
 
 
 
 /* HELPER VALUES */
 var ALPHABET_STRING = "abcdefghijklmnopqrstuvwxyz";
-var ALPHABET_LENGTH = 8;//26;
+var ALPHABET_LENGTH = 9;//26;
 var NUM_MODES = 3;
 var numTested = 0;
 var modes = {0:EMAIL_MODE,1:BANK_MODE,2:SHOP_MODE};
@@ -88,7 +103,74 @@ var modes = {0:EMAIL_MODE,1:BANK_MODE,2:SHOP_MODE};
 //wait for google stuff to load
 google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(start);
-
+function writeSummary(){
+	$("#userCount").html(userCount);
+	$("#I_practice_numLogins").html(
+		"\nEmail: "+I_practice_numLogins[EMAIL_MODE]+
+		" Bank: "+I_practice_numLogins[BANK_MODE]+
+		" Shop: "+I_practice_numLogins[EMAIL_MODE]+".");
+	$("#I_practice_numSuccesses").html(
+		"\nEmail: "+I_practice_numSuccesses[EMAIL_MODE]+
+		" Bank: "+I_practice_numSuccesses[BANK_MODE]+
+		" Shop: "+I_practice_numSuccesses[SHOP_MODE]+".");
+	$("#I_practice_numFailures").html(
+		"\nEmail: "+I_practice_numFailures[EMAIL_MODE]+
+		" Bank: "+I_practice_numFailures[BANK_MODE]+
+		" Shop: "+I_practice_numFailures[SHOP_MODE]+".");
+	$("#I_practice_numRetries").html(
+		"\nEmail: "+I_practice_numRetries[EMAIL_MODE]+
+		" Bank: "+I_practice_numRetries[BANK_MODE]+
+		" Shop: "+I_practice_numRetries[SHOP_MODE]+".");
+	$("#I_test_numLogins").html(
+		"\nEmail: "+I_test_numLogins[EMAIL_MODE]+
+		" Bank: "+I_test_numLogins[BANK_MODE]+
+		" Shop: "+I_test_numLogins[EMAIL_MODE]+".");
+	$("#I_test_numSuccesses").html(
+		"\nEmail: "+I_test_numSuccesses[EMAIL_MODE]+
+		" Bank: "+I_test_numSuccesses[BANK_MODE]+
+		" Shop: "+I_test_numSuccesses[SHOP_MODE]+".");
+	$("#I_test_numFailures").html(
+		"\nEmail: "+I_test_numFailures[EMAIL_MODE]+
+		" Bank: "+I_test_numFailures[BANK_MODE]+
+		" Shop: "+I_test_numFailures[SHOP_MODE]+".");
+	$("#I_test_numRetries").html(
+		"\nEmail: "+I_test_numRetries[EMAIL_MODE]+
+		" Bank: "+I_test_numRetries[BANK_MODE]+
+		" Shop: "+I_test_numRetries[SHOP_MODE]+".");
+		
+	$("#G_practice_numLogins").html(
+		"\nEmail: "+practice_numLogins[EMAIL_MODE]+
+		" Bank: "+practice_numLogins[BANK_MODE]+
+		" Shop: "+practice_numLogins[EMAIL_MODE]+".");
+	$("#G_practice_numSuccesses").html(
+		"\nEmail: "+practice_numSuccesses[EMAIL_MODE]+
+		" Bank: "+practice_numSuccesses[BANK_MODE]+
+		" Shop: "+practice_numSuccesses[SHOP_MODE]+".");
+	$("#G_practice_numFailures").html(
+		"\nEmail: "+practice_numFailures[EMAIL_MODE]+
+		" Bank: "+practice_numFailures[BANK_MODE]+
+		" Shop: "+practice_numFailures[SHOP_MODE]+".");
+	$("#G_practice_numRetries").html(
+		"\nEmail: "+practice_numRetries[EMAIL_MODE]+
+		" Bank: "+practice_numRetries[BANK_MODE]+
+		" Shop: "+practice_numRetries[SHOP_MODE]+".");
+	$("#G_test_numLogins").html(
+		"\nEmail: "+test_numLogins[EMAIL_MODE]+
+		" Bank: "+test_numLogins[BANK_MODE]+
+		" Shop: "+test_numLogins[EMAIL_MODE]+".");
+	$("#G_test_numSuccesses").html(
+		"\nEmail: "+test_numSuccesses[EMAIL_MODE]+
+		" Bank: "+test_numSuccesses[BANK_MODE]+
+		" Shop: "+test_numSuccesses[SHOP_MODE]+".");
+	$("#G_test_numFailures").html(
+		"\nEmail: "+test_numFailures[EMAIL_MODE]+
+		" Bank: "+test_numFailures[BANK_MODE]+
+		" Shop: "+test_numFailures[SHOP_MODE]+".");
+	$("#G_test_numRetries").html(
+		"\nEmail: "+test_numRetries[EMAIL_MODE]+
+		" Bank: "+test_numRetries[BANK_MODE]+
+		" Shop: "+test_numRetries[SHOP_MODE]+".");
+}
 /*
  * Grabs sets of all possible words from the database and invokes a function
  * that will create a password.
@@ -116,7 +198,14 @@ function createPWDChain(mode){
 function promptOnSuccessfulTry(list, mode, showAnswer){
 	var fieldID;
 	var chartID;
-	
+		var actionMsg="";
+	switch (mode){
+		case EMAIL_MODE: actionMsg ="practice_email_successful_login";break;
+		case BANK_MODE: actionMsg = "practice_bank_successful_login";break;
+		case SHOP_MODE: actionMsg = "practice_shop_successful_login";break;
+	}
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+	console.log(log);
 	switch(mode){
 		case EMAIL_MODE:
 			fieldID = EMAIL_FIELD_ID;
@@ -136,6 +225,17 @@ function promptOnSuccessfulTry(list, mode, showAnswer){
 	$("#"+chartID).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).unbind('click').click(function(){
+		practice_numRetries[mode]++;
+		I_practice_numRetries[mode]++;
+		firebase.database().ref("statistics/").update({"practice_numRetries":practice_numRetries});
+		
+		switch (mode){
+			case EMAIL_MODE: actionMsg ="practice_email_requested_retry";break;
+			case BANK_MODE: actionMsg = "practice_email_requested_retry";break;
+			case SHOP_MODE: actionMsg = "practice_email_requested_retry";break;
+		}
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+		console.log(log);
 		$("#"+fieldID+" > ."+ SUCCESS_PWD_CLASS).hide();
 			$("#"+fieldID+" > ."+SAVE_PWD_CLASS).hide();
 		$("#"+fieldID+" > ."+TRY_PWD_CLASS).hide();
@@ -143,6 +243,14 @@ function promptOnSuccessfulTry(list, mode, showAnswer){
 	});
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).show();
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).unbind('click').click(function(){
+		
+		switch (mode){
+			case EMAIL_MODE: actionMsg ="practice_email_requested_save";break;
+			case BANK_MODE: actionMsg = "practice_email_requested_save";break;
+			case SHOP_MODE: actionMsg = "practice_email_requested_save";break;
+		}
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+		console.log(log);
 			savePWD(list, mode);
 	});
 }
@@ -165,11 +273,28 @@ function promptOnFailedTry(list, mode, showAnswer){
 			chartID = SHOP_CHART_ID;
 			break;
 	}
-
+	var actionMsg="";
+	switch (mode){
+		case EMAIL_MODE: actionMsg ="practice_email_failed_login";break;
+		case BANK_MODE: actionMsg = "practice_bank_failed_login";break;
+		case SHOP_MODE: actionMsg = "practice_shop_failed_login";break;
+	}
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+	console.log(log);
 	$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).show();
 	$("#"+chartID).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).unbind('click').click(function(){
+		practice_numRetries[mode]++;
+		I_practice_numRetries[mode]++;
+		firebase.database().ref("statistics/").update({"practice_numRetries":practice_numRetries});
+		switch (mode){
+			case EMAIL_MODE: actionMsg ="practice_email_requested_retry";break;
+			case BANK_MODE: actionMsg = "practice_email_requested_retry";break;
+			case SHOP_MODE: actionMsg = "practice_email_requested_retry";break;
+		}
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+		console.log(log);
 		$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).hide();
 		$("#"+fieldID+" > ."+TRY_PWD_CLASS).hide();
 			checkPWDPart(1,list,mode, showAnswer);
@@ -179,17 +304,53 @@ function promptOnFailedTry(list, mode, showAnswer){
 
 
 function checkPWDPart(listNum, list, mode, showAnswer){
-		console.log("list: ");
-	console.log(list);
-	var fired=false;
+	var actionMsg = ""; //differs with modes
+	if (listNum==1){
+		switch (mode){
+			case EMAIL_MODE: actionMsg ="practice_email_start_attempt";break;
+			case BANK_MODE: actionMsg = "practice_bank_start_attempt";break;
+			case SHOP_MODE: actionMsg = "practice_shop_start_attempt";break;
+		}
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+	}
+	var fired = false;
 	function selectHandler(chart) {
 		var selectedItem = chart.getSelection()[0];
-		if(selectedItem && !fired){ fired=true;
+		if (selectedItem && !fired) {
+			
+			fired=true;
 			/* Correct choice chosen */
 			if (list[listNum]["choice"] == DIRECTIONS[selectedItem.row] ){
+				practice_numSuccesses[mode]++;
+				I_practice_numSuccesses[mode]++;
+				firebase.database().ref("statistics/").update({"practice_numSuccesses":practice_numSuccesses});
+				switch (mode){
+					case EMAIL_MODE: actionMsg ="practice_email_selected_correct_word";break;
+					case BANK_MODE: actionMsg = "practice_bank_selected_correct_word";break;
+					case SHOP_MODE: actionMsg = "practice_shop_selected_correct_word";break;
+				}
+				firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+				
 				if (listNum < NUM_LIST_PER_PWD) checkPWDPart(++listNum,list, mode, showAnswer);
-				else if (listNum >= NUM_LIST_PER_PWD) promptOnSuccessfulTry(list, mode, showAnswer);
-			}else  promptOnFailedTry(list, mode, showAnswer);
+				else if (listNum >= NUM_LIST_PER_PWD) {
+					practice_numLogins[mode]++;
+					I_practice_numLogins[mode]++;
+					firebase.database().ref("statistics/").update({"practice_numLogins":practice_numLogins});
+					promptOnSuccessfulTry(list, mode, showAnswer);
+				}
+			}else  {
+				practice_numFailures[mode]++;
+				I_practice_numFailures[mode]++;
+				firebase.database().ref("statistics/").update({"practice_numFailures":practice_numFailures});
+				switch (mode){
+					case EMAIL_MODE: actionMsg ="practice_email_selected_wrong_word";break;
+					case BANK_MODE: actionMsg = "practice_bank_selected_wrong_word";break;
+					case SHOP_MODE: actionMsg = "practice_shop_selected_wrong_word";break;
+				}
+				firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+				console.log(log);
+				promptOnFailedTry(list, mode, showAnswer);
+			}
 		}
 	}
 	
@@ -208,19 +369,54 @@ function checkPWDPart(listNum, list, mode, showAnswer){
 
 
 function testPWDPart(listNum,list,mode,showAnswer,numFails){
-	console.log("test list: ");
-	console.log(list);	$("#test-field > h3").html("Testing your "+list["title"]+": ");
+					var actionMsg = ""; //differs with modes
+		if (listNum==1){
+		switch (mode){
+			case EMAIL_MODE: actionMsg ="test_email_start_attempt";break;
+			case BANK_MODE: actionMsg = "test_bank_start_attempt";break;
+			case SHOP_MODE: actionMsg = "test_shop_start_attempt";break;
+		}
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
+	}
+	
+	$("#test-field > h3").html("Testing your "+list["title"]+":");
 	$("#"+TESTING_ATTEMPTS_ID).html(numFails);
 	var fired = false;
 	function selectHandler(chart) {
 		var selectedItem = chart.getSelection()[0];
 		if (selectedItem && !fired) {
+
 			fired = true;
 			if (list[listNum]["choice"] == DIRECTIONS[selectedItem.row] ){
+					test_numSuccesses[mode]++;
+					I_test_numSuccesses[mode]++;
+				firebase.database().ref("statistics/").update({"test_numSuccesses":test_numSuccesses});
+			
+				switch (mode){
+					case EMAIL_MODE: actionMsg ="test_email_selected_correct_word";break;
+					case BANK_MODE: actionMsg = "test_bank_selected_correct_word";break;
+					case SHOP_MODE: actionMsg = "test_shop_selected_correct_word";break;
+				}
+				//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+				firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});console.log(log);
 				chart.clearChart();
 				if (listNum<NUM_LIST_PER_PWD) testPWDPart(++listNum,list,mode,showAnswer,numFails);
-				else if (listNum>=NUM_LIST_PER_PWD)promptOnSuccessfulTest(list, mode,numFails);
+				else if (listNum>=NUM_LIST_PER_PWD){
+					test_numLogins[mode]++;
+					I_test_numLogins[mode]++;
+					firebase.database().ref("statistics/").update({"test_numLogins":test_numLogins});promptOnSuccessfulTest(list, mode,numFails);
+				}
 			}else {
+				I_test_numFailures[mode]++;
+				test_numFailures[mode]++;
+				firebase.database().ref("statistics/").update({"test_numFailures":test_numFailures});
+				switch (mode){
+					case EMAIL_MODE: actionMsg ="test_email_selected_wrong_word";break;
+					case BANK_MODE: actionMsg = "test_bank_selected_wrong_word";break;
+					case SHOP_MODE: actionMsg = "test_shop_selected_wrong_word";break;
+				}
+				//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+				firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});
 				chart.clearChart();promptOnFailedTest(list, mode,numFails)
 			}
 			console.log(list);
@@ -232,6 +428,14 @@ function testPWDPart(listNum,list,mode,showAnswer,numFails){
 }
 
 function promptOnSuccessfulTest(list, mode,numFails){
+		var actionMsg = ""; //differs with modes
+	switch (mode){
+		case EMAIL_MODE: actionMsg ="test_email_successful_login";break;
+		case BANK_MODE: actionMsg = "test_bank_successful_login";break;
+		case SHOP_MODE: actionMsg = "test_shop_successful_login";break;
+	}
+	//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});//console.log(log);
 	$("#"+TEST_CHART_ID).hide();
 	$("#"+SUCCESS_PWD_TEST_ID).show();
 	$("#"+TESTING_ATTEMPTS_ID).html(++numFails);
@@ -239,13 +443,26 @@ function promptOnSuccessfulTest(list, mode,numFails){
 	$("#"+SUCCESS_INDV_TEST_ID).show();
 	if (numTested>NUM_MODES) $("#"+TEST_BUTTON_ID).html("Done All Tests");
 	$("#"+TEST_BUTTON_ID).unbind('click').click(function(){
+
 		$("#"+TEST_PROCEED_PROMPT_ID).hide();
 		$("#"+SUCCESS_INDV_TEST_ID).hide();
 		$("#"+SUCCESS_PWD_TEST_ID).hide();
 		numTested++;
 		if (numTested<=NUM_MODES){
+			switch (mode){
+				case EMAIL_MODE: actionMsg ="started_testing_email";break;
+				case BANK_MODE: actionMsg ="started_testing_bank";break;
+				case SHOP_MODE: actionMsg = "started_testing_shop";break;
+			}
+			firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+			//console.log(log);
 			nextTest();
-		}else {$("#"+TEST_FIELD_ID).hide();
+		}else {
+			firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"done_testing","pwd":list});//log[new Date()] = {"id":user_id,"action":"done_testing","pwd":list};
+			//console.log(log);
+
+			writeSummary();
+			$("#"+TEST_FIELD_ID).hide();
 			$("#"+SUMM_FIELD_ID).show();
 		}
 		
@@ -277,28 +494,52 @@ function nextTest(){
 	});
 }
 function promptOnFailedTest(list, mode,numFails){
+			var actionMsg = ""; //differs with modes
+	switch (mode){
+		case EMAIL_MODE: actionMsg ="test_email_failed_login";break;
+		case BANK_MODE: actionMsg = "test_bank_failed_login";break;
+		case SHOP_MODE: actionMsg = "test_shop_failed_login";break;
+	}
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+	//console.log(log);
 	$("#"+TEST_CHART_ID).hide();
 	$("#"+FAILED_PWD_TEST_ID).show();	
 	numFails++;$("#"+TESTING_ATTEMPTS_ID).html(numFails);
 	//see how many times there has been a failure
 	console.log ("numfails : "+numFails);
 	if (numFails>=MAX_LOGIN_FAILURES){$("#"+TRY_PWD_TEST_ID).hide();
-		
+		switch (mode){
+			case EMAIL_MODE: actionMsg ="test_email_exceeded_max_failed_logins";break;
+			case BANK_MODE: actionMsg ="test_bank_exceeded_max_failed_logins";break;
+			case SHOP_MODE:actionMsg ="test_shop_exceeded_max_failed_logins";break;
+		}
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+		//console.log(log);
 		$("#"+TEST_PROCEED_PROMPT_ID).show();
 		$("#"+FAILED_INDV_TEST_ID).show();
 		$("#"+TEST_BUTTON_ID).unbind('click').click(function(evt){
 			evt.stopPropagation();
+			firebase.database().ref("statistics/").update({"test_numRetries":I_test_numRetries});
 			$("#"+TEST_PROCEED_PROMPT_ID).hide();
 			$("#"+FAILED_INDV_TEST_ID).hide();
 			$("#"+FAILED_PWD_TEST_ID).hide();
 numTested++;
 			console.log("numTested: "+numTested);
 			if (numTested<=NUM_MODES){
+							switch (mode){
+				case EMAIL_MODE: actionMsg ="started_testing_email";break;
+				case BANK_MODE: actionMsg ="started_testing_bank";break;
+				case SHOP_MODE: actionMsg = "started_testing_shop";break;
+			}
+			firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+			//console.log(log);
 				
 				nextTest();
 			}else {
+				firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"done_testing","pwd":list});//log[new Date()] = {"id":user_id,"action":"done_testing","pwd":list};
+			
 			$("#"+TEST_FIELD_ID).hide();
-						$("#"+SUMM_FIELD_ID).show();
+						$("#"+SUMM_FIELD_ID).show();writeSummary();
 			//	console.log("i wanna hide everything");
 			}
 			
@@ -307,6 +548,16 @@ numTested++;
 	}else{
 		$("#"+TRY_PWD_TEST_ID).show();
 		$("#"+TRY_PWD_TEST_ID).click(function(evt){
+				test_numRetries[mode]++;I_test_numRetries[mode]++;
+			firebase.database().ref("statistics/").update({"test_numRetries":test_numRetries});
+		
+			switch (mode){
+			case EMAIL_MODE: actionMsg ="test_email_requested_retry";break;
+			case BANK_MODE: actionMsg = "test_email_requested_retry";break;
+			case SHOP_MODE: actionMsg = "test_email_requested_retry";break;
+		}
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":list};
+	//	console.log(log);
 			evt.stopPropagation();
 			$("#"+FAILED_PWD_TEST_ID).hide();	
 			$("#"+TRY_PWD_TEST_ID).hide();
@@ -317,21 +568,25 @@ numTested++;
 
 }
 function savePWD(userWordLists, mode){
-	
+		
+		var actionMsg="";
 	switch(mode){
 		case EMAIL_MODE: 
 			
 			firebase.database().ref("userCredentials/"+user_id+"/").update({"email-pwd":userWordLists});
+			actionMsg ="saved_email_password";
 			$("#"+EMAIL_FIELD_ID).hide();break;
 		case BANK_MODE: 
 			
 			firebase.database().ref("userCredentials/"+user_id+"/").update({"bank-pwd":userWordLists});
+			actionMsg ="saved_bank_password";
 			$("#"+BANK_FIELD_ID).hide();break;
 		case SHOP_MODE: 
 			firebase.database().ref("userCredentials/"+user_id+"/").update({"shop-pwd":userWordLists});
+			actionMsg ="saved_shop_password";
 			$("#"+SHOP_FIELD_ID).hide();break;
 	}
-	
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":userWordLists});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":userWordLists};
 	//move on to creating next password, or if theyre all created go to testing
 	switch(mode){
 		case EMAIL_MODE:
@@ -342,23 +597,26 @@ function savePWD(userWordLists, mode){
 			shopPWD();
 			break;
 		case SHOP_MODE:
-			testPWDS();
+			testPWDS(userWordLists);
 			break;
 	}
 	//
 }
 
-function testPWDS(){
+function testPWDS(userWordLists){
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"started_testing","pwd":userWordLists});//	log[new Date()] = {"id":user_id,"action":"started_password_testing","pwd":userWordLists};
 	$("#"+TEST_FIELD_ID).show();
 	var modeToTest = Math.floor(Math.random()*NUM_MODES);
 		//remove from list of modes left
 	delete modes[modeToTest];
 	var pwdPath = "";
+	var actionMsg="";
 	switch(modeToTest){
-		case EMAIL_MODE:pwdPath = "email-pwd/";break;
-		case BANK_MODE:pwdPath = "bank-pwd/";break;
-		case SHOP_MODE:pwdPath = "shop-pwd/";break;
-	}console.log(modeToTest);console.log(pwdPath);console.log(modes.toString());
+		case EMAIL_MODE:pwdPath = "email-pwd/";actionMsg = "start_testing_email";break;
+		case BANK_MODE:pwdPath = "bank-pwd/";actionMsg = "start_testing_bank";break;
+		case SHOP_MODE:pwdPath = "shop-pwd/";actionMsg = "start_testing_shop";break;
+	}
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":userWordLists});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":userWordLists};
 	firebase.database().ref("userCredentials/"+user_id+"/"+pwdPath).on("value",function(snapshot){
 		list = snapshot.val();
 		console.log(list);
@@ -373,7 +631,7 @@ function makePWDPart(listNum,userWordLists,listValues,mode){
 	/* GENERATE A LIST FOR THIS USER */
 	var list = {};
 	var temp_alphabet_string = ALPHABET_STRING;
-	
+			
 	for (var i=0;i<LIST_SIZE;i++){
 		//choose a letter
 		var randLetterIndex = Math.floor(Math.random()*(ALPHABET_LENGTH-i));
@@ -415,7 +673,7 @@ function makePWDPart(listNum,userWordLists,listValues,mode){
 			case BANK_MODE: actionMsg = "generated_bank_pwd";break;
 			case SHOP_MODE: actionMsg = "generated_shop_pwd";break;
 		}
-		log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":userWordLists};
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":actionMsg,"pwd":list});//log[new Date()] = {"id":user_id,"action":actionMsg,"pwd":userWordLists};
 		console.log(log);
 		
 		/* make user practice it */
@@ -466,7 +724,7 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 				   pieSliceText: 'label',
 				   legend: 'none',
 				   pieStartAngle: -115,
-		       tooltip: {trigger: 'none'},
+				   tooltip: {trigger: 'none'},
 				   slices: sliceStyle};
 	
 	// Instantiate and draw our chart, passing in some options.
@@ -579,35 +837,75 @@ function start() {
 		/* GENERATE USER ID -- assign default value -1*/
 		user_id = firebase.database().ref("userCredentials/").push(-1).key;		
 		/* update user count stat */
-		firebase.database().ref("userCount/").transaction(function(id){
-			id +=1;
-			return id;
+		firebase.database().ref("statistics/userCount/").transaction(function(id){
+			userCount = id + 1;
+			return ++id;
+		});
+		firebase.database().ref("statistics/practice_numLogins/").on("value",function(e){
+			//console.log("numlogins is " + e);
+			//console.log(e.val());
+			practice_numLogins = e.val();
+		});
+		firebase.database().ref("statistics/practice_numSuccesses/").on("value",function(e){
+			practice_numSuccesses = e.val();
+			//console.
+		});
+		firebase.database().ref("statistics/practice_numFailures/").on("value",function(e){
+			practice_numFailures = e.val();
+		});
+		firebase.database().ref("statistics/practice_numRetries/").on("value",function(e){
+			practice_numRetries = e.val();
 		});
 		
+		firebase.database().ref("statistics/test_numLogins/").on("value",function(e){
+			test_numLogins = e.val();
+		});
+		firebase.database().ref("statistics/test_numSuccesses/").on("value",function(e){
+			test_numSuccesses = e.val();
+		});
+		firebase.database().ref("statistics/test_numFailures/").on("value",function(e){
+			test_numFailures = e.val();
+		});
+		firebase.database().ref("statistics/test_numRetries/").on("value",function(e){
+			test_numRetries = e.val();
+		});
+		firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"recorded_new_user"});
 		$("#introduction").hide();		
 		startPWDs();		
 	});
-	
-	
+	//var j = {0:"jar",1:"jump",2:"jig",3:"jolly",4:"jail",5:"jade",6:"jest",7:"jam",8:"job","count":9};
+	//firebase.database().ref("listValues/j/").set(j);
+//	firebase.database().ref("listValues/a/").set({0:"aim",1:"apple",2:"axe",3:"art",4:"ammo",5:"annoy",6:"avail",7:"army",8:"amulet","count":9});
+//	firebase.database().ref("listValues/b/").set({0:"bad",1:"boom",2:"bell",3:"brain",4:"bride",5:"box",6:"buff",7:"brawn",8:"bill","count":9});
+	//firebase.database().ref("listValues/c/").set({0:"car",1:"cool",2:"clam",3:"cradle",4:"coot",5:"clutch",6:"cease",7:"crew",8:"camel","count":9});
+//	firebase.database().ref("listValues/d/").set({0:"drama",1:"drop",2:"dry",3:"dirt",4:"dawn",5:"dress",6:"dice",7:"dentist",8:"doctor","count":9});
+//	firebase.database().ref("listValues/e/").set({0:"ever",1:"err",2:"ease",3:"excite",4:"effort",5:"ember",6:"edit",7:"end",8:"ew","count":9});
+//	firebase.database().ref("listValues/f/").set({0:"fox",1:"fun",2:"fido",3:"first",4:"fort",5:"fern",6:"friend",7:"flush",8:"fish","count":9});
+	//firebase.database().ref("listValues/g/").set({0:"gross",1:"gloom",2:"game",3:"guard",4:"glory",5:"gust",6:"grain",7:"guess",8:"grill","count":9});
+//	firebase.database().ref("listValues/h/").set({0:"hot",1:"hum",2:"hue",3:"herd",4:"hex",5:"hash",6:"heal",7:"heart",8:"help","count":9});
+//	firebase.database().ref("listValues/i/").set({0:"ill",1:"ip",2:"iffy",3:"image",4:"int",5:"illegal",6:"isolate",7:"isle",8:"item","count":9});
+//firebase.database().ref("listValues/j/").set(j);
+
 }
 
 function startPWDs(){
 	/* log a user starting the password process -> start with email*/
-	log[new Date()] = {"id":user_id,"action":"requested_email_pwd"};
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"requested_email_pwd"});
 	$("#"+EMAIL_FIELD_ID).show();
 	createPWDChain(EMAIL_MODE);
 }
 function bankPWD(){
 
-	log[new Date()] = {"id":user_id,"action":"requested_bank_pwd"};
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"requested_bank_pwd"});
 	$("#"+BANK_FIELD_ID).show();
 	createPWDChain(BANK_MODE);	
 	
 }
 function shopPWD(){
 
-	log[new Date()] = {"id":user_id,"action":"requested_shop_pwd"};
+	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"requested_shop_pwd"});
 	$("#"+SHOP_FIELD_ID).show();
 	createPWDChain(SHOP_MODE);	
 	
 }
+
