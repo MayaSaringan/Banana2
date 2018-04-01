@@ -211,6 +211,7 @@ function testPWDPart(listNum,list,mode,showAnswer,numFails){
 	console.log(list);
 	$("#"+TESTING_ATTEMPTS_ID).html(numFails);
 	var fired = false;
+		$("#test-field > h3").html("Testing your "+list["title"]+" password:");
 	function selectHandler(chart) {
 		var selectedItem = chart.getSelection()[0];
 		if (selectedItem && !fired) {
