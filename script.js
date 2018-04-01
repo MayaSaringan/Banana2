@@ -208,7 +208,7 @@ function checkPWDPart(listNum, list, mode, showAnswer){
 
 function testPWDPart(listNum,list,mode,showAnswer,numFails){
 	console.log("test list: ");
-	console.log(list);
+	console.log(list);	$("#test-field > h3").html("Testing your "+list["title"]+" password:");
 	$("#"+TESTING_ATTEMPTS_ID).html(numFails);
 	var fired = false;
 	function selectHandler(chart) {
