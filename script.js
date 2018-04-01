@@ -181,9 +181,10 @@ function promptOnFailedTry(list, mode, showAnswer){
 function checkPWDPart(listNum, list, mode, showAnswer){
 		console.log("list: ");
 	console.log(list);
+	var fired=false;
 	function selectHandler(chart) {
 		var selectedItem = chart.getSelection()[0];
-		if(selectedItem){ 
+		if(selectedItem && !fired){ fired=true;
 			/* Correct choice chosen */
 			if (list[listNum]["choice"] == DIRECTIONS[selectedItem.row] ){
 				if (listNum < NUM_LIST_PER_PWD) checkPWDPart(++listNum,list, mode, showAnswer);
