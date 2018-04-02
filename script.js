@@ -8,7 +8,7 @@
  *  Script that implements the password scheme, as well as communicates
  *  with a database to store the password data.
  *  
- *  Updated: April 1, 2018
+ *  Updated: April 2, 2018
 */
 
 /* CONSTANTS================ */
@@ -55,53 +55,25 @@ var SUCCESS_INDV_TEST_ID = "test-success-indv";
 var FAILED_INDV_TEST_ID = "test-failed-indv";
 var TEST_BUTTON_ID = "test-next-pwd";
 var TRY_PWD_TEST_ID = "try-test";
-
-var EMAIL_FIELD = $("#email-field");
 //last page:
 var SUMM_FIELD_ID = "summary-field";
+
+
 /* DATABASE PATHS */
 var USER_COUNT_REF = "userCount/";
 var LIST_VALUES_REF = "listValues/";
 
-/* LOG DATA */
-var logActivity =false;
-var log = {};//will be an object whose key is a timestamp
 
 /* USER-SPECIFIC */
 var user_id = null;	
-var SUCCESS = "success";
-/* STATISTICS */
-var userCount = 0;
-//var gen_numAttempts = {0:0,1:0,2:0};
-var practice_numSuccesses = {0:0,1:0,2:0};
-var practice_numFailures  = {0:0,1:0,2:0};
-var practice_numRetries  ={0:0,1:0,2:0};
-var practice_numLogins  ={0:0,1:0,2:0};
-//test
-var test_numSuccesses = {0:0,1:0,2:0};
-var test_numFailures  = {0:0,1:0,2:0};
-var test_numRetries   = {0:0,1:0,2:0};
-var test_numLogins    = {0:0,1:0,2:0};
 
-var I_practice_numSuccesses = {0:0,1:0,2:0};
-var I_practice_numFailures  ={0:0,1:0,2:0};
-var I_practice_numRetries  = {0:0,1:0,2:0};
-var I_practice_numLogins  = {0:0,1:0,2:0};
-//test
-var I_test_numSuccesses = {0:0,1:0,2:0};
-var I_test_numFailures  = {0:0,1:0,2:0};
-var I_test_numRetries   = {0:0,1:0,2:0};
-var I_test_numLogins    = {0:0,1:0,2:0};
+/* STATISTICS */
 var P_LOGINS = "p_total";
 var P_SUCCESSFUL_LOGINS = "p_successes";
 var P_FAILED_LOGINS = "p_fails";
 var T_LOGINS = "t_total";
 var T_SUCCESSFUL_LOGINS = "t_successes";
 var T_FAILED_LOGINS = "t_fails";
-var numLogs = 0;
-var p_modeTypeString = {0:"practice_email",1:"practice_bank",2:"practice_shop"};
-var t_modeTypeString = {0:"test_email",1:"test_bank",2:"test_shop"};
-var modeString = {0:"email",1:"bank",2:"hop"};
 var userStatistics = {
 	"p_total":{
 		"total":0,
@@ -122,20 +94,52 @@ var userStatistics = {
 	"t_successes":[],
 	"t_fails":[]
 }
-var FAILURE="failure";
-numLogins=0;
-var P_EMAIL = "practice_email";
-var REQ_PWD="requested_pwd";
+
+var globalStatistics = {
+	"p_total":{
+		"total":0,
+		"success":0,
+		"avgSuccessDuration":0,
+		"fail":0,
+		"avgFailDuration":0
+	},
+	"p_successes":[],
+	"p_fails":[],
+	"t_total":{
+		"total":0,
+		"success":0,
+		"avgSuccessDuration":0,
+		"fail":0,
+		"avgFailDuration":0
+	},
+	"t_successes":[],
+	"t_fails":[]
+}
 /* HELPER VALUES */
-var ALPHABET_STRING = "abcdefghijklmnopqrstuvwxyz";
-var ALPHABET_LENGTH = 9;//26;
+var SUCCESS = "success";
+var FAILURE="failure";
+var ALPHABET_STRING = "abcdefghijklmnopqrstuvwyz";//x is omitted 
+var ALPHABET_LENGTH = 25;
 var NUM_MODES = 3;
 var numTested = 0;
 var modes = {0:EMAIL_MODE,1:BANK_MODE,2:SHOP_MODE};
 var titleList = {0:"Email Password",1:"Bank Password",2:"Shop Password"};
 var chart_id_list = {0:EMAIL_CHART_ID,1:BANK_CHART_ID,2:SHOP_CHART_ID};
 var field_id_list = {0:EMAIL_FIELD_ID,1:BANK_FIELD_ID,2:SHOP_FIELD_ID};
+var showAnswer = true;
+var p_modeTypeString = {0:"practice_email",1:"practice_bank",2:"practice_shop"};
+var t_modeTypeString = {0:"test_email",1:"test_bank",2:"test_shop"};
+var modeString = {0:"email",1:"bank",2:"hop"};
+
+/*LOG MESSAGES*/
+var P_EMAIL = "practice_email";
+var REQ_PWD="requested_pwd";
+
 /* ================================================*/
+/*
+ * Sends a log object to the database, containing the 
+ * <eventMsg>,<passwordType>,<pwd>
+ */
 function addLog(eventMsg, passwordType, pwd){
 	if (passwordType==-1 && pwd==-1){
 		firebase.database().ref("log/"+new Date()+"/").push({
@@ -157,12 +161,55 @@ function addLog(eventMsg, passwordType, pwd){
 		});
 	}
 }
+/* ================================================*/
+/*
+ * Pushes login data to the database at path <DBpath>
+ * 
+ */
+function pushLoginDataToDB(DBpath,duration,mode){
+	firebase.database().ref(DBpath).push({
+		"user_id":user_id,
+		"duration":duration,
+		"mode":titleList[mode]
+
+	});	 
+}
 
 
+/* ================================================*/
+/*
+ * Changes the statistics for login totals on the database
+ * 
+ */
+function alterDBStatistics(section,duration,success){
+	if (success==SUCCESS){
+		//alter data on the database
+		var newTotal  =globalStatistics[section]["total"]+1;
+		var newSucc = globalStatistics[section]["success"]+1;
+		var newAvg = ((globalStatistics[section]["avgSuccessDuration"]*globalStatistics[section]["success"])
+						+duration)/
+					newSucc;
+		firebase.database().ref("statistics/login_info/"+section+"/").update(
+			{"total":newTotal,"success":newSucc,"avgSuccessDuration":newAvg});	
+	}else{
+		//alter data on the database
+		var newTotal  =globalStatistics[section]["total"]+1;
+		var newFail = globalStatistics[section]["fail"]+1;
+		var newAvg = ((globalStatistics[section]["avgFailDuration"]*globalStatistics[section]["fail"])
+						+duration)/
+					newFail;
+		firebase.database().ref("statistics/login_info/"+section+"/").update(
+			{"total":newTotal,"fail":newFail,"avgFailDuration":newAvg});			
+	}
+	
+}
+/* ================================================*/
+/*
+ * Alters global variables tracking login statistics for this user,
+ * and adds this users statistics to the database.
+ */
 function addLoginData(success, duration, mode,sessionType){
-	console.log(success);
 	console.log(duration);
-	console.log(mode);
 	if (sessionType =="practice"){
 		if (success == SUCCESS){
 			userStatistics[P_SUCCESSFUL_LOGINS].push( 
@@ -170,10 +217,16 @@ function addLoginData(success, duration, mode,sessionType){
 				"duration":duration,
 				"mode":titleList[mode]
 			});
+			
+			//alter global variables client side
 			userStatistics[P_LOGINS]["total"]++;		
 			userStatistics[P_LOGINS]["avgSuccessDuration"] = 
 				((userStatistics[P_LOGINS]["avgSuccessDuration"]*userStatistics[P_LOGINS]["success"])
 				+ duration)/++userStatistics[P_LOGINS]["success"];
+				
+			//alter data on the database
+			alterDBStatistics(P_LOGINS,duration,success);
+			pushLoginDataToDB("statistics/login_info/"+P_SUCCESSFUL_LOGINS+"/",duration,mode);
 		}else if (success == FAILURE){
 			userStatistics[P_FAILED_LOGINS].push( 
 			{
@@ -184,6 +237,9 @@ function addLoginData(success, duration, mode,sessionType){
 			userStatistics[P_LOGINS]["avgFailDuration"] = 
 				((userStatistics[P_LOGINS]["avgFailDuration"]*userStatistics[P_LOGINS]["fail"])
 				+ duration)/++userStatistics[P_LOGINS]["fail"];
+			//alter data on the database
+			alterDBStatistics(P_LOGINS,duration,success);
+			pushLoginDataToDB("statistics/login_info/"+P_FAILED_LOGINS+"/",duration,mode);
 		}
 
 	}else if(sessionType=="test"){
@@ -197,6 +253,9 @@ function addLoginData(success, duration, mode,sessionType){
 			userStatistics[T_LOGINS]["avgSuccessDuration"] = 
 				((userStatistics[T_LOGINS]["avgSuccessDuration"]*userStatistics[T_LOGINS]["success"])
 				+ duration)/++userStatistics[T_LOGINS]["success"];
+			//alter data on the database
+			alterDBStatistics(T_LOGINS,duration,success);
+			pushLoginDataToDB("statistics/login_info/"+T_SUCCESSFUL_LOGINS+"/",duration,mode);
 		}else if (success == FAILURE){
 			userStatistics[T_FAILED_LOGINS].push( 
 			{
@@ -207,11 +266,12 @@ function addLoginData(success, duration, mode,sessionType){
 			userStatistics[T_LOGINS]["avgFailDuration"] = 
 				((userStatistics[T_LOGINS]["avgFailDuration"]*userStatistics[T_LOGINS]["fail"])
 				+ duration)/++userStatistics[T_LOGINS]["fail"];
+			//alter data on the database
+			alterDBStatistics(T_LOGINS,duration,success);
+			pushLoginDataToDB("statistics/login_info/"+T_FAILED_LOGINS+"/",duration,mode);
 		}
 	}
-	console.log(userStatistics);
-	//send to database
-	firebase.database().ref("statistics/login_info/").set(userStatistics);	
+
 
 	
 }
@@ -220,6 +280,11 @@ function addLoginData(success, duration, mode,sessionType){
 google.charts.load('current', {'packages':['corechart']});
 google.charts.setOnLoadCallback(start);
 
+/* ================================================*/
+/*
+ * Changes what is written on the summary page at the end of the series of pages
+ * to print out statistics for the password scheme for this client only
+ */
 function writeSummary(){
 	$("#"+TEST_FIELD_ID).hide();
 	$("#"+SUMM_FIELD_ID).show();
@@ -239,7 +304,7 @@ function writeSummary(){
 		"</ul>");
 
 }
-/*
+/* ================================================
  * Grabs sets of all possible words from the database and invokes a function
  * that will create a password.
  */
@@ -253,21 +318,35 @@ function createPWDStep(mode){
 	});	
 }
 
+/* ================================================*/
+/*
+ * Shows and hides html elements that are appropriate to be shown/hidden
+ * when the user gets their password right while theyre in the practice session
+ */
 function showSuccessfulTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ SUCCESS_PWD_CLASS).show();
 	$("#"+chartID).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
+	$("#"+fieldID+" > ."+"answer-toggle").hide();
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).show();
 }
+
+/* ================================================*/
+/*
+ * Shows and hides html elements that are appropriate to be shown/hidden
+ * when the user gets their password right while theyre in the practice session
+ */
 function showFailedTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).show();
 	$("#"+chartID).hide();
+	$("#"+fieldID+" > ."+"answer-toggle").hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
 }
 function hideTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ SUCCESS_PWD_CLASS).hide();
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).hide();
+		$("#"+fieldID+" > ."+"answer-toggle").show();
 	$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).hide();
 	$("#"+chartID).hide();
 }
@@ -282,6 +361,7 @@ function waitForSaveClick(fieldID,chartID,list,mode,showAnswer){
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).unbind('click').click(function(){
 		addLog("save_login_pwd_requested",p_modeTypeString[mode],list);
 		hideTryMsg(fieldID,chartID);
+		$("#"+fieldID+" > ."+"answer-toggle").hide();
 		savePWD(list, mode);
 	});
 }
@@ -334,6 +414,11 @@ function checkPWDPart(listNum, list, mode, showAnswer,startTime){
 	}
 	//set title, chart id, and mode
 	list["title"] = titleList[mode];
+	$(".answer-toggle").unbind('click').click(function(){
+		showAnswer = !showAnswer;
+		console.log("toggle");
+		createChart(listNum,list,chart_id_list[mode],showAnswer,selectHandler,mode);
+	});
 	createChart(listNum,list,chart_id_list[mode],showAnswer,selectHandler,mode);
 }
 
@@ -379,7 +464,8 @@ function nextTest(){
 	}
 	delete modes[modeToTest];
 	firebase.database().ref("userCredentials/"+user_id+"/"+titleList[modeToTest]+"/").on("value",function(snapshot){
-		testPWDPart(1,snapshot.val(),modeToTest,false,0,new Date());
+		showAnswer=false;
+		testPWDPart(1,snapshot.val(),modeToTest,showAnswer,0,new Date());
 	});
 }
 
@@ -490,7 +576,8 @@ function testPWDS(userWordLists){
 	addLog("testing_pwd",t_modeTypeString[modeToTest],userWordLists);
 	firebase.database().ref("userCredentials/"+user_id+"/"+titleList[modeToTest]+"/").on("value",function(snapshot){	
 		numTested++;
-		testPWDPart(1,snapshot.val(),modeToTest,false,0,new Date());
+		showAnswer=false;
+		testPWDPart(1,snapshot.val(),modeToTest,showAnswer,0,new Date());
 	});
 	//});
 }
@@ -535,8 +622,8 @@ function makePWDStepPart(listNum,userWordLists,listValues,mode){
 	if (listNum == NUM_LIST_PER_PWD){
 		addLog("generated_pwd",p_modeTypeString[mode],list);		
 		/* make user practice it */
-		
-		checkPWDPart(1,userWordLists, mode, true,new Date());
+		showAnswer=true;
+		checkPWDPart(1,userWordLists, mode, showAnswer,new Date());
 	}
 	/* otherwise, keep making the password */
 	else	makePWDStepPart(++listNum, userWordLists, listValues, mode);
@@ -589,7 +676,7 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 	// Instantiate and draw our chart, passing in some options.
 	console.log(divID);
 	var chart = new google.visualization.PieChart(document.getElementById(divID));
-
+	
 	google.visualization.events.addListener(chart, 'select', function () {
 						handlerFunc(chart);
 						});    
@@ -710,6 +797,15 @@ function start() {
 		//addLog(new Date(),"recorded_new_user",-1,-1);
 		$("#introduction").hide();		
 		//invoke email->bank->shop->test
+		firebase.database().ref("statistics/login_info/").on("value",function(snapshot){
+				var temp = snapshot.val();
+				console.log(temp);
+				globalStatistics[P_LOGINS]["total"] =temp[P_LOGINS]["total"];
+				globalStatistics[P_LOGINS]["success"] =temp[P_LOGINS]["success"];
+				globalStatistics[P_LOGINS]["avgSuccessDuration"] =temp[P_LOGINS]["avgSuccessDuration"];
+				globalStatistics[P_LOGINS]["fail"] =temp[P_LOGINS]["fail"];
+				globalStatistics[P_LOGINS]["avgFailDuration"] =temp[P_LOGINS]["avgFailDuration"];
+		});
 		emailPWD();		
 	});
 
@@ -723,6 +819,7 @@ function emailPWD(){
 	createPWDStep(EMAIL_MODE);
 }
 function bankPWD(){
+	showAnswer=true;
 	$("#"+EMAIL_FIELD_ID).hide();
 	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"requested_bank_pwd"});
 	$("#"+BANK_FIELD_ID).show();
@@ -730,6 +827,7 @@ function bankPWD(){
 	
 }
 function shopPWD(){
+	showAnswer=true;
 	$("#"+BANK_FIELD_ID).hide();	
 	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"requested_shop_pwd"});
 	$("#"+SHOP_FIELD_ID).show();
