@@ -464,7 +464,7 @@ function testPWDPart(listNum,list,mode,showAnswer,numFails,startTime){
 			fired = true;
 			if (list[listNum]["choice"] == DIRECTIONS[selectedItem.row] ){
 				addLog("select_correct_word",t_modeTypeString[mode],list);	
-				chart.clearChart();
+				//chart.clearChart();
 				if (listNum<NUM_LIST_PER_PWD) 
 					testPWDPart(++listNum,list,mode,showAnswer,numFails,startTime);
 				else if (listNum>=NUM_LIST_PER_PWD){
@@ -473,7 +473,7 @@ function testPWDPart(listNum,list,mode,showAnswer,numFails,startTime){
 			}else {
 				//failed login:
 				addLog("selected_wrong_word",t_modeTypeString[mode],list);	
-				chart.clearChart();
+			//	chart.clearChart();
 				promptOnFailedTest(list, mode, numFails,startTime,new Date());
 			}
 		}
@@ -545,7 +545,7 @@ function showFailedTestMsg(numFails){
 function waitForTryAgainClick(list, mode,numFails){
 	
 	$("#"+TRY_PWD_TEST_ID).show();
-	$("#"+TRY_PWD_TEST_ID).click(function(){
+	$("#"+TRY_PWD_TEST_ID).unbind("click").click(function(){
 		addLog("retry_login_requested",t_modeTypeString[mode],list);
 		$("#"+TEST_PROCEED_PROMPT_ID).hide();
 		$("#"+FAILED_INDV_TEST_ID).hide();
@@ -711,7 +711,7 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 	console.log(divID);
 	var chart = new google.visualization.PieChart(document.getElementById(divID));
 	
-	google.visualization.events.addListener(chart, 'select', function () {
+	google.visualization.events.addOneTimeListener(chart, 'select', function () {
 						handlerFunc(chart);
 						});    
 	//37 left  |   38 up  |   39 right   |   40 down
@@ -833,7 +833,7 @@ function start() {
     storageBucket: "comp-3008v2.appspot.com",
     messagingSenderId: "483115186465"
    };
-	firebase.initializeApp(config2);
+	firebase.initializeApp(config);
 	
 	/* activity starts being logged whenever the user clicks this button */
 	$("#start-process").click(function(){
