@@ -326,6 +326,9 @@ function writeSummary(){
 				"<li>Number of Failed Logins: "+userStatistics[T_LOGINS]["fail"]+"</li>"+
 				"<li>Average Failed Login Time: "+userStatistics[T_LOGINS]["avgFailDuration"]+"</li></ul>"+
 		"</ul>");
+		
+	date = new Date();
+	firebase.database().ref("userCredentials/"+user_id+"/userstatistics/").push({"time":date,"stats":userStatistics});	
 
 }
 /* ================================================
@@ -516,6 +519,8 @@ function waitForNextTestClick(list,mode){
 			nextTest();
 		}else {
 			addLog("done_testing","testing",list);
+				//backup in case database is corrupted with the software bugging up
+			 
 			writeSummary();
 
 		}
@@ -542,6 +547,8 @@ function waitForTryAgainClick(list, mode,numFails){
 	$("#"+TRY_PWD_TEST_ID).show();
 	$("#"+TRY_PWD_TEST_ID).click(function(){
 		addLog("retry_login_requested",t_modeTypeString[mode],list);
+		$("#"+TEST_PROCEED_PROMPT_ID).hide();
+		$("#"+FAILED_INDV_TEST_ID).hide();
 		$("#"+FAILED_PWD_TEST_ID).hide();	
 		$("#"+TRY_PWD_TEST_ID).hide();
 		testPWDPart(1,list,mode, false,numFails,new Date());
@@ -560,6 +567,8 @@ function promptOnFailedTest(list, mode,numFails,startTime,endTime){
 	waitForTryAgainClick(list,mode,numFails);
 	
 	if (numFails>=MAX_LOGIN_FAILURES){
+		$("#"+TEST_CHART_ID).hide();
+		$("#"+FAILED_PWD_TEST_ID).hide();	
 		$("#"+TRY_PWD_TEST_ID).hide();
 		addLog("exceeded_max_failed_logins",t_modeTypeString[mode],list);	
 		$("#"+TEST_PROCEED_PROMPT_ID).show();
@@ -824,7 +833,7 @@ function start() {
     storageBucket: "comp-3008v2.appspot.com",
     messagingSenderId: "483115186465"
    };
-	firebase.initializeApp(config);
+	firebase.initializeApp(config2);
 	
 	/* activity starts being logged whenever the user clicks this button */
 	$("#start-process").click(function(){
