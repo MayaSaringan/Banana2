@@ -1,38 +1,39 @@
 /* COMP 3008: Project 2 
- * Names: 
- *  Daniel Sturk
- *  Luke Connolly
+ *  Names: 
+ *  Daniel Sturk(101036873)
+ *  Luke Connolly (100999531)
  *	Maya Saringan (101001759)
- * 	Vesh Yami Diaby
+ * 	Vesh-Yami Diaby (100949894)
  *
  *  Script that implements the password scheme, as well as communicates
  *  with a database to store the password data.
  *  
- *  Updated: April 2, 2018
 */
 
 /* CONSTANTS================ */
 /* SCHEME BASIS VALUES */
-var NUM_DIRECTIONS = 8;
 var DIRECTIONS = ["left","top-left","top","top-right","right","bottom-right","bottom","bottom-left"];
-var NUM_LIST_PER_PWD = 7;
-var LIST_SIZE = 8;
+var NUM_DIRECTIONS = 8;
+var NUM_LIST_PER_PWD = 7; //7 lists with 8 choices each is equivalent to 2^21 possibilities
+var LIST_SIZE = 8; //each direction has a word assigned to it
 
 /* PROJECT REQUIREMENTS VALUES */
-var MAX_LOGIN_FAILURES = 3;
+var MAX_LOGIN_FAILURES = 3; //when user is entering password during the test session, they can only fail up to 3 times
+//3 types of password to generate for user. The variables are used to track which password we r at
 var EMAIL_MODE= 0;
 var BANK_MODE=1;
 var SHOP_MODE=2;
 
 
-/* HTML IDs & CLASSes*/
-//common:
+/* HTML IDs & CLASSes -> so we can change the class/id's whenever without having to alter many spots in the script*/
+//common to all "pages"
 var PWD_INSTRUCTIONS_CLASS = "instructions";
 var FAILED_PWD_CLASS ="failed-pwd";
 var SUCCESS_PWD_CLASS = "success-pwd";
 var TRY_PWD_CLASS = "try-pwd";
 var SAVE_PWD_CLASS ="save-pwd";
 var CREATE_PWD_CLASS = "create-pwd";
+var ANSWER_TOGGLE_CLASS = "answer-toggle";
 //intro:
 var INTRODUCTION_FIELD_ID = "introduction";
 //emails:
@@ -57,78 +58,93 @@ var TEST_BUTTON_ID = "test-next-pwd";
 var TRY_PWD_TEST_ID = "try-test";
 //last page:
 var SUMM_FIELD_ID = "summary-field";
-
+var USER_STATISTICS_ID = "user-statistics";
 
 /* DATABASE PATHS */
-var USER_COUNT_REF = "userCount/";
+var USER_COUNT_REF = "statistics/userCount/";
+var LOGIN_INFO_REF = "statistics/login_info/";
 var LIST_VALUES_REF = "listValues/";
+var LOG_REF = "log/";
+var USER_PASSWORD_PATH_REF = "userCredentials/";
 
 
 /* USER-SPECIFIC */
 var user_id = null;	
 
 /* STATISTICS */
-var P_LOGINS = "p_total";
-var P_SUCCESSFUL_LOGINS = "p_successes";
-var P_FAILED_LOGINS = "p_fails";
-var T_LOGINS = "t_total";
-var T_SUCCESSFUL_LOGINS = "t_successes";
-var T_FAILED_LOGINS = "t_fails";
-var userStatistics = {
-	"p_total":{
-		"total":0,
-		"success":0,
-		"avgSuccessDuration":0,
-		"fail":0,
-		"avgFailDuration":0
-	},
-	"p_successes":[],
-	"p_fails":[],
-	"t_total":{
-		"total":0,
-		"success":0,
-		"avgSuccessDuration":0,
-		"fail":0,
-		"avgFailDuration":0
-	},
-	"t_successes":[],
-	"t_fails":[]
-}
+//the following are key property values that will be used to identify
+//properties in the login statistics client side and in the database
+var P_LOGINS = "p_total";               //total logins during practice pwd session
+var P_SUCCESSFUL_LOGINS = "p_successes";//total successful logins during practice session
+var P_FAILED_LOGINS = "p_fails";        //total failed logins during practice session
+var T_LOGINS = "t_total";               //total logins during testing
+var T_SUCCESSFUL_LOGINS = "t_successes";//total successful logins during testing
+var T_FAILED_LOGINS = "t_fails";        //total failed logins during testing
 
+//contains login statistics for this user:
+var userStatistics = {
+	"p_total":{                   //for practice pwd sessions
+		"total":0,
+		"success":0,
+		"avgSuccessDuration":0,
+		"fail":0,
+		"avgFailDuration":0
+	},
+	"p_successes":[],            //contains time and which pwd for successful login for practice sessions
+	"p_fails":[],                //contains time and which pwd for failed login for practice sessions
+	
+	"t_total":{                   //for test sessions:
+		"total":0,
+		"success":0,
+		"avgSuccessDuration":0,
+		"fail":0,
+		"avgFailDuration":0
+	},
+	"t_successes":[],    //contains time and which pwd for successful login for test sessions
+	"t_fails":[]        //contains time and which pwd for failed login for test sessions
+}
+//contains the global statistics for login information
 var globalStatistics = {
-	"p_total":{
+	"p_total":{             //for practice pwd sessions
 		"total":0,
 		"success":0,
 		"avgSuccessDuration":0,
 		"fail":0,
 		"avgFailDuration":0
 	},
-	"p_successes":[],
-	"p_fails":[],
-	"t_total":{
+	"p_successes":[],//contains time and which pwd for successful login for practice sessions
+	"p_fails":[],    //contains time and which pwd for failed login for practice sessions
+	
+	"t_total":{      //for test sessions:
 		"total":0,
 		"success":0,
 		"avgSuccessDuration":0,
 		"fail":0,
 		"avgFailDuration":0
 	},
-	"t_successes":[],
-	"t_fails":[]
+	"t_successes":[],//contains time and which pwd for successful login for test sessions
+	"t_fails":[]       //contains time and which pwd for failed login for test sessions
 }
 /* HELPER VALUES */
 var SUCCESS = "success";
 var FAILURE="failure";
 var ALPHABET_STRING = "abcdefghijklmnopqrstuvwyz";//x is omitted 
-var ALPHABET_LENGTH = 25;
-var NUM_MODES = 3;
-var numTested = 0;
+var ALPHABET_LENGTH = 25;//26-1 since x is omitted from alphabet string
+var NUM_MODES = 3;    //number of password types to generate
+var numTested = 0;    //number of passwords tested
+//associates a number with a mode
 var modes = {0:EMAIL_MODE,1:BANK_MODE,2:SHOP_MODE};
+//associates a string title to each mode
 var titleList = {0:"Email Password",1:"Bank Password",2:"Shop Password"};
+//associates a div id to each mode that contains the chart to show words
 var chart_id_list = {0:EMAIL_CHART_ID,1:BANK_CHART_ID,2:SHOP_CHART_ID};
+//associates a div id to each mode that contains the entire page for the mode
 var field_id_list = {0:EMAIL_FIELD_ID,1:BANK_FIELD_ID,2:SHOP_FIELD_ID};
-var showAnswer = true;
+var showAnswer = true; //when true, the answer shows. Off by default for test sessions
+//associates a mode type to each mode, to distinguish between checking for email pwd during practice or during test, etc
 var p_modeTypeString = {0:"practice_email",1:"practice_bank",2:"practice_shop"};
 var t_modeTypeString = {0:"test_email",1:"test_bank",2:"test_shop"};
+//associates a string version of a mode to itself
 var modeString = {0:"email",1:"bank",2:"hop"};
 
 /*LOG MESSAGES*/
@@ -141,6 +157,10 @@ var REQ_PWD="requested_pwd";
  * <eventMsg>,<passwordType>,<pwd>
  */
 function addLog(eventMsg, passwordType, pwd){
+	//grabs current timestamp and uses it as the key property
+	//when pushed to the database. When pushed a unique id (not user id) is assigned to each log
+		//so that if multiple logs has the exact same timestamp, they are still
+		//distinguishable by their unique ids
 	if (passwordType==-1 && pwd==-1){
 		firebase.database().ref("log/"+new Date()+"/").push({
 			"id":user_id,
@@ -184,22 +204,26 @@ function pushLoginDataToDB(DBpath,duration,mode){
 function alterDBStatistics(section,duration,success){
 	if (success==SUCCESS){
 		//alter data on the database
-		var newTotal  =globalStatistics[section]["total"]+1;
-		var newSucc = globalStatistics[section]["success"]+1;
-		var newAvg = ((globalStatistics[section]["avgSuccessDuration"]*globalStatistics[section]["success"])
-						+duration)/
-					newSucc;
+		globalStatistics[section]["total"]++;
+		globalStatistics[section]["avgSuccessDuration"]
+				= ((globalStatistics[section]["avgSuccessDuration"]*globalStatistics[section]["success"]) +duration)/
+					     ++globalStatistics[section]["success"];
 		firebase.database().ref("statistics/login_info/"+section+"/").update(
-			{"total":newTotal,"success":newSucc,"avgSuccessDuration":newAvg});	
+			{"total":globalStatistics[section]["total"],
+			"success":globalStatistics[section]["success"],
+			"avgSuccessDuration":globalStatistics[section]["avgSuccessDuration"]
+		});	
 	}else{
 		//alter data on the database
-		var newTotal  =globalStatistics[section]["total"]+1;
-		var newFail = globalStatistics[section]["fail"]+1;
-		var newAvg = ((globalStatistics[section]["avgFailDuration"]*globalStatistics[section]["fail"])
-						+duration)/
-					newFail;
+		globalStatistics[section]["total"]++;
+		globalStatistics[section]["avgFailDuration"] 
+			= ((globalStatistics[section]["avgFailDuration"]*globalStatistics[section]["fail"])+duration) /
+             			++globalStatistics[section]["fail"];
 		firebase.database().ref("statistics/login_info/"+section+"/").update(
-			{"total":newTotal,"fail":newFail,"avgFailDuration":newAvg});			
+			{"total":         globalStatistics[section]["total"],
+			"fail":           globalStatistics[section]["avgFailDuration"],
+			"avgFailDuration":globalStatistics[section]["fail"]
+		});			
 	}
 	
 }
@@ -415,6 +439,7 @@ function checkPWDPart(listNum, list, mode, showAnswer,startTime){
 	//set title, chart id, and mode
 	list["title"] = titleList[mode];
 	$(".answer-toggle").unbind('click').click(function(){
+		addLog("toggled_answer_visibility",p_modeTypeString[mode],list);
 		showAnswer = !showAnswer;
 		console.log("toggle");
 		createChart(listNum,list,chart_id_list[mode],showAnswer,selectHandler,mode);
@@ -685,9 +710,14 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 	var fired =false;
 	var arrowKeys = {37:false, 38:false, 39:false, 40:false,
 					65: false, 87: false, 68: false, 83: false};
-	function z(d){
+					
+					
+	/* Returns true if another element in arrowKeys other than <a> 
+	 * and <b> is true (they are true if pressed)
+	 */
+	function areOtherValsTrue(a,b){
 		for(var key in arrowKeys) {
-			if(arrowKeys[key] && key != d) {
+			if(arrowKeys[key] && key != a && key!=b) {
 				return true;
 			}
 		}
@@ -730,28 +760,28 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 	}).keyup(function(e) {
 		if (e.keyCode in arrowKeys && !fired) {
 			
-			if ((arrowKeys[37] || arrowKeys[65]) && !z(37)){
+			if ((arrowKeys[37] || arrowKeys[65]) && !areOtherValsTrue(37,65)){
 				$("#log").html("left pressed");
 				chart.setSelection([{row: 0}]);fired=true;
 				 handlerFunc(chart);
 				 
 			}
 			//check if up only pressed
-			else if ((arrowKeys[38] || arrowKeys[87])&& !z(38) ){
+			else if ((arrowKeys[38] || arrowKeys[87])&& !areOtherValsTrue(38,87)){
 				$("#log").html("up pressed");
 				chart.setSelection([{row: 2}]); fired=true
 				 handlerFunc(chart);
 				;
 			}
 			//check if right only pressed
-			else if ((arrowKeys[39] || arrowKeys[68])&& !z(39) ){
+			else if ((arrowKeys[39] || arrowKeys[68])&& !areOtherValsTrue(39,68)){
 				$("#log").html("right pressed");
 				chart.setSelection([{row: 4}]); fired=true;
 				 handlerFunc(chart);
 				
 			}
 			//check if down only pressed
-			else if ((arrowKeys[40] || arrowKeys[83])&& !z(40) ){
+			else if ((arrowKeys[40] || arrowKeys[83])&& !areOtherValsTrue(40,83)){
 				$("#log").html("down pressed");
 				chart.setSelection([{row: 6}]);fired=true;
 				 handlerFunc(chart);
@@ -765,15 +795,16 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 	$("#"+divID).show();
 }
 	
-
+//applies a function to a value on the databse
 function applyFuncToDBVal(DBpath, operation){
 	firebase.database().ref(DBpath).transaction(function(val){
 		return operation(val);
 	});
 }
+//increments val
 function add(val){return ++val;}
 
-
+//Called when google stuff is done loading
 function start() {
 	//connect to the database
 	var config = {
@@ -784,6 +815,15 @@ function start() {
 		storageBucket: "comp-3008.appspot.com",
 		messagingSenderId: "1023908821307"
 	};
+	//alternative database link for later testing
+	 var config2 = {
+    apiKey: "AIzaSyA2I6dTZ1ZEXi0LiR_o2CApgSEnRcKW0HI",
+    authDomain: "comp-3008v2.firebaseapp.com",
+    databaseURL: "https://comp-3008v2.firebaseio.com",
+    projectId: "comp-3008v2",
+    storageBucket: "comp-3008v2.appspot.com",
+    messagingSenderId: "483115186465"
+   };
 	firebase.initializeApp(config);
 	
 	/* activity starts being logged whenever the user clicks this button */
@@ -794,7 +834,7 @@ function start() {
 		/* update user count stat */
 		applyFuncToDBVal("statistics/userCount/",add);		
 		/* log new user arrival*/
-		//addLog(new Date(),"recorded_new_user",-1,-1);
+		addLog("recorded_new_user",-1,-1);
 		$("#introduction").hide();		
 		//invoke email->bank->shop->test
 		firebase.database().ref("statistics/login_info/").on("value",function(snapshot){
