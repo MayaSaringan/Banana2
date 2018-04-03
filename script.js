@@ -836,7 +836,7 @@ function start() {
 	firebase.initializeApp(config);
 	
 	/* activity starts being logged whenever the user clicks this button */
-	$("#start-process").click(function(){
+	$("#start-process").unbind("click").click(function(){
 		
 		/* GENERATE USER ID -- assign default value -1*/
 		user_id = firebase.database().ref("userCredentials/").push(-1).key;		
@@ -863,22 +863,22 @@ function start() {
 
 
 function emailPWD(){
-	addLog("requested_pwd",P_EMAIL,-1);
+	addLog("requested_pwd",p_modeTypeString[EMAIL_MODE],-1);
 	$("#email-field").show();
 	createPWDStep(EMAIL_MODE);
 }
 function bankPWD(){
 	showAnswer=true;
+	addLog("requested_pwd",p_modeTypeString[BANK_MODE],-1);
 	$("#"+EMAIL_FIELD_ID).hide();
-	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"requested_bank_pwd"});
 	$("#"+BANK_FIELD_ID).show();
 	createPWDStep(BANK_MODE);	
 	
 }
 function shopPWD(){
 	showAnswer=true;
+	addLog("requested_pwd",p_modeTypeString[BANK_MODE],-1);
 	$("#"+BANK_FIELD_ID).hide();	
-	firebase.database().ref("log/"+new Date()+"/").set({"id":user_id,"action":"requested_shop_pwd"});
 	$("#"+SHOP_FIELD_ID).show();
 	createPWDStep(SHOP_MODE);	
 	
