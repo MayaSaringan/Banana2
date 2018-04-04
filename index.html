@@ -8,10 +8,10 @@
 <script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
 
   </head>
-	<body>
+
 	<div class="w3-container" style="text-align:center" >
-		<div style = "width: 600px;margin:50px auto;text-align:left;border:2px solid grey;background-color:black;">
-			<div style="width:100%;color:white;padding:10px;"><h2>COMP 3008 Random Password Generator</h2></div>
+		<div style = "width: 800px;margin:50px auto;text-align:left;">
+			<div style="width:100%;padding:10px;"><h2>COMP 3008 Random Password Generator</h2></div>
 			<div style="padding:10px 30px 10px 30px ;background-color:white;">
 				
 				<!-- FIRST "PAGE" USER SEES -->
@@ -33,24 +33,24 @@
 					<h3>Email Password Creation:</h3>
 					<div class ="instructions">
 						<p>
-						Below is one of the sets of words composing your password. The word in the blackened slice
+						Below is one of the sets of words composing your password. The word in the black slice
 						will be the word you are supposed to select when presented with this set. You can select the
 						word by clicking on the slice containing the word, or by pressing the arrow keys that would
 						correspond to that slice.</p>
-						<p>If you select the wrong word, you will have to start over at the first set again.</p>
+						<p>If you select the wrong word, you will restart from the first set.</p>
 					</div>
-					
-					<!--will contain the chart--->
-					<div id="email_chart_div" style="width:400; height:300;margin:0 auto;"></div>
-						
 					<p class="failed-pwd" style="display:none">
 					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
 					<p class="success-pwd" style="display:none">
 					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
 					Move on to the next password.</p>
 					<button class="try-pwd" style="display:none">Try again!</button>
-					<button class="answer-toggle">Show/Hide answer</button>
-					<button class="save-pwd" style="display:none">Keep Password</button>					
+					<button class="answer-toggle" style="display:none">Show/Hide answer</button>
+					<button class="save-pwd" style="display:none">Keep Password</button>		
+					<!--will contain the chart--->
+					<div id="email_chart_div" style="width:600; height:500;margin:0 auto;"></div>
+						
+								
 				</div>
 				
 				
@@ -59,15 +59,12 @@
 					<h3>Banking Password Creation:</h3>
 					<div class ="instructions">
 						<p>
-						Below is one of the sets of words composing your password. The word in the blackened slice
+						Below is one of the sets of words composing your password. The word in the black slice
 						will be the word you are supposed to select when presented with this set. You can select the
 						word by clicking on the slice containing the word, or by pressing the arrow keys that would
 						correspond to that slice.</p>
-						<p>If you select the wrong word, you will have to start over at the first set again.</p>
+						<p>If you select the wrong word, you will restart from the first set.</p>
 					</div>
-					
-					<!--will contain the chart--->
-					<div id="bank_chart_div" style="width:400; height:300;margin:0 auto;"></div>
 						
 					<p class="failed-pwd" style="display:none">
 					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
@@ -75,8 +72,11 @@
 					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
 					Move on to the next password.</p>
 					<button class="try-pwd" style="display:none">Try again!</button>
-					<button class="answer-toggle" >Show/Hide answer</button>
-					<button class="save-pwd" style="display:none">Keep Password</button>					
+					<button class="answer-toggle" style="display:none">Show/Hide answer</button>
+					<button class="save-pwd" style="display:none">Keep Password</button>		
+					<!--will contain the chart--->
+					<div id="bank_chart_div" style="width:600; height:500;margin:0 auto;"></div>
+								
 				</div>
 				
 				<!-- SHOP "PAGE" USER SEES -->
@@ -84,24 +84,24 @@
 					<h3>Shopping Password Creation:</h3>
 					<div class ="instructions">
 						<p>
-						Below is one of the sets of words composing your password. The word in the blackened slice
+						Below is one of the sets of words composing your password. The word in the black slice
 						will be the word you are supposed to select when presented with this set. You can select the
 						word by clicking on the slice containing the word, or by pressing the arrow keys that would
 						correspond to that slice.</p>
-						<p>If you select the wrong word, you will have to start over at the first set again.</p>
+						<p>If you select the wrong word, you will restart from the first set.</p>
 					</div>
-					
-					<!--will contain the chart--->
-					<div id="shop_chart_div" style="width:400; height:300;margin:0 auto;"></div>
-						
 					<p class="failed-pwd" style="display:none">
 					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
 					<p class="success-pwd" style="display:none">
 					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
 					Move on to the next password.</p>
 					<button class="try-pwd" style="display:none">Try again!</button>
-					<button class="answer-toggle">Show/Hide answer</button>
-					<button class="save-pwd" style="display:none">Keep Password</button>					
+					<button class="answer-toggle" style="display:none">Show/Hide answer</button>
+					<button class="save-pwd" style="display:none">Keep Password</button>	
+					<!--will contain the chart--->
+					<div id="shop_chart_div" style="width:600; height:500;margin:0 auto;"></div>
+						
+									
 				</div>
 				
 				
@@ -117,9 +117,6 @@
 							</p>
 						</div>
 					</div>	
-						<!--will contain the chart--->
-						<div id="test_chart_div" style="width:400; height:300;"></div>
-						
 						<!--says status of the password: failed or success, and remaining attempts left-->
 						<p>Attempted <span  id="testing-attempts">0</span> times.</p>
 						<p id="failed-pwd-test" style="display:none">
@@ -134,6 +131,10 @@
 							<!--show button when success, or exceeded fail limit--->
 							<button id="test-next-pwd">Test Next Password!</button>
 						</div>
+						<!--will contain the chart--->
+						<div id="test_chart_div" style="width:600; height:500;"></div>
+						
+					
 					
 					
 					
@@ -153,8 +154,6 @@
 						</div>
 				</div>
 				
-				
-				<!---<div id="log">ss</div>--->
 
 				
 			</div>
