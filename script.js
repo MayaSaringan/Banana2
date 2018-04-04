@@ -735,14 +735,14 @@ function createChart(listNum,list,divID,handlerFunc,mode){
 		var actualChoice = list[listNum]["choice"];
 		console.log("actual choice:"+list[listNum]["choice"]);
 		//try to find outerHTML what slice it is wordiwse
-		if (actualChoice =="left") sliceStyle ={ 0:{color:'black'}};
-		else if (actualChoice =="top-left")  sliceStyle ={ 1:{color:'black'}};
-		else if (actualChoice =="top") sliceStyle ={ 2:{color:'black'}};
-		else if (actualChoice =="top-right")  sliceStyle ={ 3:{color:'black'}};
-		else if (actualChoice =="right") sliceStyle ={ 4:{color:'black'}};
-		else if (actualChoice =="bottom-right") sliceStyle ={ 5:{color:'black'}};
-		else if (actualChoice =="bottom") sliceStyle ={ 6:{color:'black'}};
-		else if (actualChoice =="bottom-left") sliceStyle ={ 7:{color:'black'}};
+		if (actualChoice =="left") sliceStyle ={ 0:{textStyle:{color:'black'}}};
+		else if (actualChoice =="top-left")  sliceStyle ={ 1:{textStyle:{color:'black'}}};
+		else if (actualChoice =="top") sliceStyle ={ 2:{textStyle:{color:'black'}}};
+		else if (actualChoice =="top-right")  sliceStyle ={ 3:{textStyle:{color:'black'}}};
+		else if (actualChoice =="right") sliceStyle ={ 4:{textStyle:{color:'black'}}};
+		else if (actualChoice =="bottom-right") sliceStyle ={ 5:{textStyle:{color:'black'}}};
+		else if (actualChoice =="bottom") sliceStyle ={ 6:{textStyle:{color:'black'}}};
+		else if (actualChoice =="bottom-left") sliceStyle ={ 7:{textStyle:{color:'black'}}};
 	}
 	
 	// Set chart options
