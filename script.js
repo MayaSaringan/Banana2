@@ -322,8 +322,7 @@ function writeSummary(){
 				"<li>Average Failed Login Time: "+userStatistics[T_LOGINS]["avgFailDuration"]+"</li></ul>"+
 		"</ul>");
 		
-	date = new Date();
-	firebase.database().ref("userCredentials/"+user_id+"/userstatistics/").push({"time":date,"stats":userStatistics});	
+	date = new Date();	
 
 }
 /* ================================================
