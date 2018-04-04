@@ -148,8 +148,23 @@ var t_modeTypeString = {0:"test_email",1:"test_bank",2:"test_shop"};
 var modeString = {0:"email",1:"bank",2:"hop"};
 
 /*LOG MESSAGES*/
-var P_EMAIL = "practice_email";
 var REQ_PWD="requested_pwd";
+var SUCCESSFUL_LOGIN_MSG = "successful login";
+var FAILED_LOGIN_MSG = "failed login";
+/* ================================================*/
+/* applies a function to a value on the database
+ */
+function applyFuncToDBVal(DBpath, operation){
+	firebase.database().ref(DBpath).transaction(function(val){
+		return operation(val);
+	});
+}
+/* ================================================*/
+/* operation that increments val
+ */
+function add(val){return ++val;}
+
+
 
 /* ================================================*/
 /*
@@ -157,23 +172,25 @@ var REQ_PWD="requested_pwd";
  * <eventMsg>,<passwordType>,<pwd>
  */
 function addLog(eventMsg, passwordType, pwd){
+	var date = new Date();
 	//grabs current timestamp and uses it as the key property
+	//the value property is the miliseconds to filter through events that happen on the saem second
 	//when pushed to the database. When pushed a unique id (not user id) is assigned to each log
 		//so that if multiple logs has the exact same timestamp, they are still
 		//distinguishable by their unique ids
 	if (passwordType==-1 && pwd==-1){
-		firebase.database().ref("log/"+new Date()+"/").push({
+		firebase.database().ref("log/"+date+"/"+date.getMilliseconds()+"/").push({
 			"id":user_id,
 			"event":eventMsg
 		});
 	}else if (passwordType!=-1 && pwd==-1){
-		firebase.database().ref("log/"+new Date()+"/").push({
+		firebase.database().ref("log/"+date+"/"+date.getMilliseconds()+"/").push({
 			"id":user_id,
 			"event":eventMsg,
 			"password_type":passwordType,
 		});
 	}else{
-		firebase.database().ref("log/"+new Date()+"/").push({
+		firebase.database().ref("log/"+date+"/"+date.getMilliseconds()+"/").push({
 			"id":user_id,
 			"event":eventMsg,
 			"password_type":passwordType,
@@ -203,30 +220,43 @@ function pushLoginDataToDB(DBpath,duration,mode){
  */
 function alterDBStatistics(section,duration,success){
 	if (success==SUCCESS){
-		//alter data on the database
-		globalStatistics[section]["total"]++;
-		globalStatistics[section]["avgSuccessDuration"]
-				= ((globalStatistics[section]["avgSuccessDuration"]*globalStatistics[section]["success"]) +duration)/
-					     ++globalStatistics[section]["success"];
 		firebase.database().ref("statistics/login_info/"+section+"/").update(
 			{"total":globalStatistics[section]["total"],
 			"success":globalStatistics[section]["success"],
 			"avgSuccessDuration":globalStatistics[section]["avgSuccessDuration"]
 		});	
 	}else{
-		//alter data on the database
-		globalStatistics[section]["total"]++;
-		globalStatistics[section]["avgFailDuration"] 
-			= ((globalStatistics[section]["avgFailDuration"]*globalStatistics[section]["fail"])+duration) /
-             			++globalStatistics[section]["fail"];
 		firebase.database().ref("statistics/login_info/"+section+"/").update(
 			{"total":         globalStatistics[section]["total"],
-			"fail":           globalStatistics[section]["avgFailDuration"],
-			"avgFailDuration":globalStatistics[section]["fail"]
+			"fail":           globalStatistics[section]["fail"],
+			"avgFailDuration":globalStatistics[section]["avgFailDuration"]
 		});			
 	}
+	//every time the login data is altered client side, alter database login data for this specific user
+	firebase.database().ref("userCredentials/"+user_id+"/userStatistics/").set(userStatistics);
 	
 }
+/* ================================================*/
+/* Alters statistics client side for relevant sections
+ */
+ function addToStats(success_section,logins_section, avg_section, status_section, duration,mode){
+	//alter statistics variables client side
+	userStatistics[success_section].push( 
+	{
+		"duration":duration,
+		"mode":titleList[mode]
+	});
+	userStatistics[logins_section]["total"]++;		
+	userStatistics[logins_section][avg_section] = 
+		((userStatistics[logins_section][avg_section]*userStatistics[logins_section][status_section])
+		+ duration)/++userStatistics[logins_section][status_section];
+	globalStatistics[logins_section]["total"]++;		
+	globalStatistics[logins_section][avg_section] = 
+		((globalStatistics[logins_section][avg_section]*globalStatistics[logins_section][status_section])
+		+ duration)/++globalStatistics[logins_section][status_section];
+
+ }
+
 /* ================================================*/
 /*
  * Alters global variables tracking login statistics for this user,
@@ -236,31 +266,12 @@ function addLoginData(success, duration, mode,sessionType){
 	console.log(duration);
 	if (sessionType =="practice"){
 		if (success == SUCCESS){
-			userStatistics[P_SUCCESSFUL_LOGINS].push( 
-			{
-				"duration":duration,
-				"mode":titleList[mode]
-			});
-			
-			//alter global variables client side
-			userStatistics[P_LOGINS]["total"]++;		
-			userStatistics[P_LOGINS]["avgSuccessDuration"] = 
-				((userStatistics[P_LOGINS]["avgSuccessDuration"]*userStatistics[P_LOGINS]["success"])
-				+ duration)/++userStatistics[P_LOGINS]["success"];
-				
-			//alter data on the database
+			addToStats(P_SUCCESSFUL_LOGINS,P_LOGINS,"avgSuccessDuration","success",duration,mode);
+			//alter data on the database: adds statistics to user and changes global statistics
 			alterDBStatistics(P_LOGINS,duration,success);
 			pushLoginDataToDB("statistics/login_info/"+P_SUCCESSFUL_LOGINS+"/",duration,mode);
 		}else if (success == FAILURE){
-			userStatistics[P_FAILED_LOGINS].push( 
-			{
-				"duration":duration,
-				"mode":titleList[mode]
-			});
-			userStatistics[P_LOGINS]["total"]++;		
-			userStatistics[P_LOGINS]["avgFailDuration"] = 
-				((userStatistics[P_LOGINS]["avgFailDuration"]*userStatistics[P_LOGINS]["fail"])
-				+ duration)/++userStatistics[P_LOGINS]["fail"];
+			addToStats(P_FAILED_LOGINS,P_LOGINS,"avgFailDuration","fail",duration,mode);
 			//alter data on the database
 			alterDBStatistics(P_LOGINS,duration,success);
 			pushLoginDataToDB("statistics/login_info/"+P_FAILED_LOGINS+"/",duration,mode);
@@ -268,28 +279,12 @@ function addLoginData(success, duration, mode,sessionType){
 
 	}else if(sessionType=="test"){
 		if (success == SUCCESS){
-			userStatistics[T_SUCCESSFUL_LOGINS].push( 
-			{
-				"duration":duration,
-				"mode":titleList[mode]
-			});
-			userStatistics[T_LOGINS]["total"]++;		
-			userStatistics[T_LOGINS]["avgSuccessDuration"] = 
-				((userStatistics[T_LOGINS]["avgSuccessDuration"]*userStatistics[T_LOGINS]["success"])
-				+ duration)/++userStatistics[T_LOGINS]["success"];
+			addToStats(T_SUCCESSFUL_LOGINS,T_LOGINS,"avgSuccessDuration","success",duration,mode);
 			//alter data on the database
 			alterDBStatistics(T_LOGINS,duration,success);
 			pushLoginDataToDB("statistics/login_info/"+T_SUCCESSFUL_LOGINS+"/",duration,mode);
 		}else if (success == FAILURE){
-			userStatistics[T_FAILED_LOGINS].push( 
-			{
-				"duration":duration,
-				"mode":titleList[mode]
-			});
-			userStatistics[T_LOGINS]["total"]++;		
-			userStatistics[T_LOGINS]["avgFailDuration"] = 
-				((userStatistics[T_LOGINS]["avgFailDuration"]*userStatistics[T_LOGINS]["fail"])
-				+ duration)/++userStatistics[T_LOGINS]["fail"];
+			addToStats(T_FAILED_LOGINS,T_LOGINS,"avgFailDuration","fail",duration,mode);
 			//alter data on the database
 			alterDBStatistics(T_LOGINS,duration,success);
 			pushLoginDataToDB("statistics/login_info/"+T_FAILED_LOGINS+"/",duration,mode);
@@ -354,37 +349,50 @@ function showSuccessfulTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ SUCCESS_PWD_CLASS).show();
 	$("#"+chartID).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
-	$("#"+fieldID+" > ."+"answer-toggle").hide();
+	$("#"+fieldID+" > ."+ANSWER_TOGGLE_CLASS).hide();
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).show();
 }
 
 /* ================================================*/
 /*
- * Shows and hides html elements that are appropriate to be shown/hidden
- * when the user gets their password right while theyre in the practice session
+ * Shows password entry status messages for failure during practice sessions
+ * 
  */
 function showFailedTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).show();
-	$("#"+chartID).hide();
-	$("#"+fieldID+" > ."+"answer-toggle").hide();
+//	$("#"+chartID).hide();
+	$("#"+fieldID+" > ."+ANSWER_TOGGLE_CLASS).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
 }
+
+/* ================================================*/
+/*
+ * Hides all the password status messages and the ability to keep a password
+ * and shows the button to toggle whether the answer shows or not
+ */
 function hideTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ SUCCESS_PWD_CLASS).hide();
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).hide();
-		$("#"+fieldID+" > ."+"answer-toggle").show();
+	$("#"+fieldID+" > ."+ANSWER_TOGGLE_CLASS).show();
 	$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).hide();
-	$("#"+chartID).hide();
+//	$("#"+chartID).hide();
 }
-function retryPractice(fieldID, chartID,list, mode,showAnswer){
+
+/* ================================================*/
+/*
+ * Waits for a click on the button to try again. When clicked, 
+ * it hides the password status messages & shows the answer toggle
+ *  and recreates the chart for the user to click
+ */
+function retryPractice(fieldID, chartID,list, mode){
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).unbind('click').click(function(){
 		addLog("retry_login_requested",p_modeTypeString[mode],list);
 		hideTryMsg(fieldID,chartID);
-		checkPWDPart(1,list,mode, showAnswer,new Date());
+		checkPWDPart(1,list,mode,new Date());
 	});	
 }
-function waitForSaveClick(fieldID,chartID,list,mode,showAnswer){
+function waitForSaveClick(fieldID,chartID,list,mode){
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).unbind('click').click(function(){
 		addLog("save_login_pwd_requested",p_modeTypeString[mode],list);
 		hideTryMsg(fieldID,chartID);
@@ -392,19 +400,29 @@ function waitForSaveClick(fieldID,chartID,list,mode,showAnswer){
 		savePWD(list, mode);
 	});
 }
-//duration wil be tracked by object duration:{start,end} that will be passed around by the functions
-function promptOnSuccessfulTry(list, mode, showAnswer,startTime, endTime){
+/* ================================================*/
+/*
+ * When a user gets a whole password entry correct, show the appropriate
+ * status messages and wait for them to either retry the password or keep the
+ * password and move on
+ */
+ function promptOnSuccessfulTry(list, mode, startTime, endTime){
 	addLog("successful_login",p_modeTypeString[mode],list);	
 	addLoginData(SUCCESS,(endTime-startTime)/1000,mode,"practice");
 	var fieldID = field_id_list[mode];
 	var chartID = chart_id_list[mode];
 	showSuccessfulTryMsg(fieldID,chartID);
-	retryPractice(fieldID,chartID,list,mode,showAnswer);
-	waitForSaveClick(fieldID,chartID,list,mode,showAnswer);
+	retryPractice(fieldID,chartID,list,mode);
+	waitForSaveClick(fieldID,chartID,list,mode);
 
 }
-
-function promptOnFailedTry(list, mode, showAnswer, startTime, endTime){
+/* ================================================*/
+/*
+ * When a user gets a whole password entry wrong, show the appropriate
+ * status messages and wait for them to retry the password. They cannot move on till
+ * they get it correct again
+ */
+function promptOnFailedTry(list, mode, startTime, endTime){
 	var fieldID;
 	var chartID;
 	addLoginData(FAILURE,(endTime-startTime)/1000,mode,"practice");
@@ -412,46 +430,57 @@ function promptOnFailedTry(list, mode, showAnswer, startTime, endTime){
 	var fieldID = field_id_list[mode];
 	var chartID = chart_id_list[mode];
 	showFailedTryMsg(fieldID,chartID);
-	retryPractice(fieldID,chartID,list,mode,showAnswer);
+	retryPractice(fieldID,chartID,list,mode);
 }
 
 
-
-function checkPWDPart(listNum, list, mode, showAnswer,startTime){
+/* ================================================*/
+/*
+ * Creates a chart for a single set of words and awaits 
+ * for the user to select one of the slices
+ */
+function checkPWDPart(listNum, list, mode, startTime){
 	if (listNum==1)	addLog("started_password_attempt",p_modeTypeString[mode],list);	
-	var fired = false;
+	
+	var fired = false; //true if a slice has been selected
 	function selectHandler(chart) {
-		var selectedItem = chart.getSelection()[0];
-		if (selectedItem && !fired) {			
+		var selectedItem = chart.getSelection()[0]; //gets the selected slice
+		if (selectedItem && !fired) {	//if there is a selection		
 			fired=true;
+			chart.clearChart();
 			/* Correct choice chosen */
 			if (list[listNum]["choice"] == DIRECTIONS[selectedItem.row] ){
 				addLog("select_correct_word",p_modeTypeString[mode],list);	
 				
-				if (listNum < NUM_LIST_PER_PWD) 
-					checkPWDPart(++listNum,list, mode, showAnswer,startTime);
-				else if (listNum >= NUM_LIST_PER_PWD) 
-					promptOnSuccessfulTry(list, mode, showAnswer,startTime,new Date());
+				//if the current set of words is not the last set
+				if (listNum < NUM_LIST_PER_PWD)  checkPWDPart(++listNum,list, mode, startTime);
+				//if the current set of words is the last set
+				else if (listNum >= NUM_LIST_PER_PWD) promptOnSuccessfulTry(list, mode,startTime,new Date());
 			}else  {
-				//failed login:
+				/* Bad choice chosen */
 				addLog("selected_wrong_word",p_modeTypeString[mode],list);	
-				promptOnFailedTry(list, mode, showAnswer,startTime,new Date());
+				promptOnFailedTry(list, mode,startTime,new Date());
 			}
 		}
 	}
-	//set title, chart id, and mode
+	//give the current list a title if it doesnt already have one
 	list["title"] = titleList[mode];
-	$(".answer-toggle").unbind('click').click(function(){
+	//bind a click event to the answer toggle button 
+	//when clicked the answer will either show or not be hidden/slice is blacked/unblackened
+	$("."+ ANSWER_TOGGLE_CLASS).unbind('click').click(function(){
 		addLog("toggled_answer_visibility",p_modeTypeString[mode],list);
 		showAnswer = !showAnswer;
-		console.log("toggle");
-		createChart(listNum,list,chart_id_list[mode],showAnswer,selectHandler,mode);
+		//recreate the chart to either show/not show the answer
+		createChart(listNum,list,chart_id_list[mode],selectHandler,mode);
 	});
-	createChart(listNum,list,chart_id_list[mode],showAnswer,selectHandler,mode);
+	
+	//creates a chart at the appropriate section. <showAnswer>'s value determines if answer is shown or not
+	//and pass the handler function <selectHandler> to handle the select event on the chart
+	createChart(listNum,list,chart_id_list[mode],selectHandler,mode);
 }
 
 
-function testPWDPart(listNum,list,mode,showAnswer,numFails,startTime){
+function testPWDPart(listNum,list,mode,numFails,startTime){
 	var actionMsg = ""; //differs with modes
 	if (listNum==1) addLog("started_password_attempt",t_modeTypeString[mode],list);	
 	$("#test-field > h3").html("Testing your "+list["title"]+":");
@@ -460,13 +489,13 @@ function testPWDPart(listNum,list,mode,showAnswer,numFails,startTime){
 	function selectHandler(chart) {
 		var selectedItem = chart.getSelection()[0];
 		if (selectedItem && !fired) {
-
+chart.clearChart();
 			fired = true;
 			if (list[listNum]["choice"] == DIRECTIONS[selectedItem.row] ){
 				addLog("select_correct_word",t_modeTypeString[mode],list);	
-				//chart.clearChart();
+				
 				if (listNum<NUM_LIST_PER_PWD) 
-					testPWDPart(++listNum,list,mode,showAnswer,numFails,startTime);
+					testPWDPart(++listNum,list,mode,numFails,startTime);
 				else if (listNum>=NUM_LIST_PER_PWD){
 					promptOnSuccessfulTest(list, mode,numFails,startTime,new Date());
 				}
@@ -479,7 +508,7 @@ function testPWDPart(listNum,list,mode,showAnswer,numFails,startTime){
 		}
 	}
 	
-	createChart(listNum,list,"test_chart_div",showAnswer,selectHandler,mode);
+	createChart(listNum,list,"test_chart_div",selectHandler,mode);
 	
 }
 function nextTest(){		
@@ -493,13 +522,13 @@ function nextTest(){
 	delete modes[modeToTest];
 	firebase.database().ref("userCredentials/"+user_id+"/"+titleList[modeToTest]+"/").on("value",function(snapshot){
 		showAnswer=false;
-		testPWDPart(1,snapshot.val(),modeToTest,showAnswer,0,new Date());
+		testPWDPart(1,snapshot.val(),modeToTest,0,new Date());
 	});
 }
 
 function showSuccessfulTestMsg(numFails){
 	
-	$("#"+TEST_CHART_ID).hide();
+//	$("#"+TEST_CHART_ID).hide();
 	$("#"+SUCCESS_PWD_TEST_ID).show();
 	$("#"+TESTING_ATTEMPTS_ID).html(++numFails);
 	$("#"+TEST_PROCEED_PROMPT_ID).show();
@@ -536,12 +565,14 @@ function promptOnSuccessfulTest(list, mode,numFails,startTime, endTime){
 }
 
 function showFailedTestMsg(numFails){
-	$("#"+TEST_CHART_ID).hide();
+	//$("#"+TEST_CHART_ID).hide();
 	$("#"+FAILED_PWD_TEST_ID).show();	
 	
 	$("#"+TESTING_ATTEMPTS_ID).html(numFails);
 }
-
+/* ================================================*/
+/* Waits for user to reattempt a password during test mode
+ */
 function waitForTryAgainClick(list, mode,numFails){
 	
 	$("#"+TRY_PWD_TEST_ID).show();
@@ -551,12 +582,15 @@ function waitForTryAgainClick(list, mode,numFails){
 		$("#"+FAILED_INDV_TEST_ID).hide();
 		$("#"+FAILED_PWD_TEST_ID).hide();	
 		$("#"+TRY_PWD_TEST_ID).hide();
-		testPWDPart(1,list,mode, false,numFails,new Date());
+		showAnswer=false;
+		testPWDPart(1,list,mode,numFails,new Date());
 	});
 		
 }
-
-
+/* ================================================*/
+/* Called when user fails a test password attempt. Remprompts them as 
+ * appropriate or goes to test next password
+ */
 function promptOnFailedTest(list, mode,numFails,startTime,endTime){
 	addLog("failed_login",t_modeTypeString[mode],list);	
 	addLoginData(FAILURE,(endTime-startTime)/1000,mode,"test");
@@ -579,7 +613,10 @@ function promptOnFailedTest(list, mode,numFails,startTime,endTime){
 
 }
 function updateDB(DBpath,data){	firebase.database().ref(DBpath).set(data);}
-
+/* ================================================*/
+/* Save a password to the database and move on to next password, or to testing,
+ * as appropriate
+ */
 function savePWD(userWordLists, mode){
 	addLog("saved_password",p_modeTypeString[mode],userWordLists);
 	updateDB(("userCredentials/"+user_id+"/"+titleList[mode]+"/"),(userWordLists));
@@ -598,23 +635,32 @@ function savePWD(userWordLists, mode){
 	}
 	//
 }
-
+/* ================================================*/
+/* After the shop password is made, it chooses a random password
+ * to test
+ */
 function testPWDS(userWordLists){
 	$("#"+SHOP_FIELD_ID).hide();
 	addLog("started_testing","testing",userWordLists);
 	$("#"+TEST_FIELD_ID).show();
+	//pick a random password to test
 	var modeToTest = Math.floor(Math.random()*NUM_MODES);
 	//remove from list of modes left
 	delete modes[modeToTest];
 	
-	addLog("testing_pwd",t_modeTypeString[modeToTest],userWordLists);
+	
 	firebase.database().ref("userCredentials/"+user_id+"/"+titleList[modeToTest]+"/").on("value",function(snapshot){	
 		numTested++;
 		showAnswer=false;
-		testPWDPart(1,snapshot.val(),modeToTest,showAnswer,0,new Date());
+		testPWDPart(1,snapshot.val(),modeToTest,0,new Date());
 	});
-	//});
 }
+
+/* ================================================*/
+/* Creates a single set of words for the password
+ * But calls itself after to make the next set, so it in effect creates the whole password
+ * Calls a function that starts having the user practice the password after it is made
+ */
 function makePWDStepPart(listNum,userWordLists,listValues,mode){
 	
 	/* GENERATE A LIST FOR THIS USER */
@@ -657,14 +703,17 @@ function makePWDStepPart(listNum,userWordLists,listValues,mode){
 		addLog("generated_pwd",p_modeTypeString[mode],list);		
 		/* make user practice it */
 		showAnswer=true;
-		checkPWDPart(1,userWordLists, mode, showAnswer,new Date());
+		checkPWDPart(1,userWordLists, mode, new Date());
 	}
 	/* otherwise, keep making the password */
 	else	makePWDStepPart(++listNum, userWordLists, listValues, mode);
 	
 }
-
-function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
+/* ================================================*/
+/* Creates a chart displaying the set of words and attaches a listener
+ * to wait for a slice to be selected
+ */
+function createChart(listNum,list,divID,handlerFunc,mode){
 	// Create the data table that will populate image: 
 	var data = new google.visualization.DataTable();
 	data.addColumn('string', 'Direction');
@@ -679,8 +728,7 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 		[list[listNum]["list"]["right"], 1],
 		[list[listNum]["list"]["bottom-right"], 1],
 		[list[listNum]["list"]["bottom"], 1],
-		[list[listNum]["list"]["bottom-left"], 1],
-		["none", 0]
+		[list[listNum]["list"]["bottom-left"], 1]
 	]);
 	var sliceStyle={};
 	if (showAnswer){
@@ -699,9 +747,10 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 	
 	// Set chart options
 	var options = {title:list["title"],
-				   width:400,
-				   height:300,
+				   width:600,
+				   height:500,
 				   pieSliceText: 'label',
+				   "pieSliceTextStyle":{"fontSize":"20"},
 				   legend: 'none',
 				   pieStartAngle: -115,
 				   tooltip: {trigger: 'none'},
@@ -736,6 +785,7 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 		if (e.keyCode in arrowKeys && !fired ) {
 			
 			arrowKeys[e.keyCode] = true;
+			e.preventDefault();
 			//check if left and up is pressed
 			if ((arrowKeys[37] || arrowKeys[65]) &&  (arrowKeys[38] || arrowKeys[87]) ){
 				$("#log").html("left up pressed");
@@ -804,16 +854,12 @@ function createChart(listNum,list,divID,showAnswer,handlerFunc,mode){
 	$("#"+divID).show();
 }
 	
-//applies a function to a value on the databse
-function applyFuncToDBVal(DBpath, operation){
-	firebase.database().ref(DBpath).transaction(function(val){
-		return operation(val);
-	});
-}
-//increments val
-function add(val){return ++val;}
 
-//Called when google stuff is done loading
+
+
+/* ================================================*/
+/* Starts up the password process
+ */
 function start() {
 	//connect to the database
 	var config = {
@@ -826,14 +872,14 @@ function start() {
 	};
 	//alternative database link for later testing
 	 var config2 = {
-    apiKey: "AIzaSyA2I6dTZ1ZEXi0LiR_o2CApgSEnRcKW0HI",
-    authDomain: "comp-3008v2.firebaseapp.com",
-    databaseURL: "https://comp-3008v2.firebaseio.com",
-    projectId: "comp-3008v2",
-    storageBucket: "comp-3008v2.appspot.com",
-    messagingSenderId: "483115186465"
-   };
-	firebase.initializeApp(config);
+		apiKey: "AIzaSyA2I6dTZ1ZEXi0LiR_o2CApgSEnRcKW0HI",
+		authDomain: "comp-3008v2.firebaseapp.com",
+		databaseURL: "https://comp-3008v2.firebaseio.com",
+		projectId: "comp-3008v2",
+		storageBucket: "comp-3008v2.appspot.com",
+		messagingSenderId: "483115186465"
+	};
+	firebase.initializeApp(config2);//config one for actual testing - config2 for debugging
 	
 	/* activity starts being logged whenever the user clicks this button */
 	$("#start-process").unbind("click").click(function(){
@@ -861,24 +907,36 @@ function start() {
 
 }
 
-
+/* ================================================*/
+/* Starts the generation of an email password
+ */
 function emailPWD(){
+	showAnswer=true;
 	addLog("requested_pwd",p_modeTypeString[EMAIL_MODE],-1);
 	$("#email-field").show();
 	createPWDStep(EMAIL_MODE);
 }
+
+/* ================================================*/
+/* Starts the generation of a bank password
+ */
 function bankPWD(){
 	showAnswer=true;
-	addLog("requested_pwd",p_modeTypeString[BANK_MODE],-1);
 	$("#"+EMAIL_FIELD_ID).hide();
+	addLog("requested_pwd",p_modeTypeString[BANK_MODE],-1);
 	$("#"+BANK_FIELD_ID).show();
 	createPWDStep(BANK_MODE);	
 	
 }
+
+
+/* ================================================*/
+/* Starts the generation of a shop password
+ */
 function shopPWD(){
 	showAnswer=true;
-	addLog("requested_pwd",p_modeTypeString[BANK_MODE],-1);
 	$("#"+BANK_FIELD_ID).hide();	
+	addLog("requested_pwd",p_modeTypeString[SHOP_MODE],-1);
 	$("#"+SHOP_FIELD_ID).show();
 	createPWDStep(SHOP_MODE);	
 	
