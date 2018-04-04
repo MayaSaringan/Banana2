@@ -878,7 +878,7 @@ function start() {
 		storageBucket: "comp-3008v2.appspot.com",
 		messagingSenderId: "483115186465"
 	};
-	firebase.initializeApp(config2);//config one for actual testing - config2 for debugging
+	firebase.initializeApp(config);//config one for actual testing - config2 for debugging
 	
 	/* activity starts being logged whenever the user clicks this button */
 	$("#start-process").unbind("click").click(function(){
