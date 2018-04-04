@@ -347,7 +347,6 @@ function createPWDStep(mode){
  */
 function showSuccessfulTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ SUCCESS_PWD_CLASS).show();
-	$("#"+chartID).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
 	$("#"+fieldID+" > ."+ANSWER_TOGGLE_CLASS).hide();
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).show();
