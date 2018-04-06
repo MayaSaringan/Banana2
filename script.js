@@ -60,13 +60,6 @@ var TRY_PWD_TEST_ID = "try-test";
 var SUMM_FIELD_ID = "summary-field";
 var USER_STATISTICS_ID = "user-statistics";
 
-/* DATABASE PATHS */
-var USER_COUNT_REF = "statistics/userCount/";
-var LOGIN_INFO_REF = "statistics/login_info/";
-var LIST_VALUES_REF = "listValues/";
-var LOG_REF = "log/";
-var USER_PASSWORD_PATH_REF = "userCredentials/";
-
 
 /* USER-SPECIFIC */
 var user_id = null;	
@@ -174,10 +167,11 @@ function add(val){return ++val;}
 function addLog(eventMsg, passwordType, pwd){
 	var date = new Date();
 	//grabs current timestamp and uses it as the key property
-	//the value property is the miliseconds to filter through events that happen on the saem second
+	//the value property is the miliseconds to filter through events that happen on the same second
 	//when pushed to the database. When pushed a unique id (not user id) is assigned to each log
 		//so that if multiple logs has the exact same timestamp, they are still
 		//distinguishable by their unique ids
+		
 	if (passwordType==-1 && pwd==-1){
 		firebase.database().ref("log/"+date+"/"+date.getMilliseconds()+"/").push({
 			"id":user_id,
@@ -204,6 +198,9 @@ function addLog(eventMsg, passwordType, pwd){
  * 
  */
 function pushLoginDataToDB(DBpath,duration,mode){
+	//adds a json object to the property specified in DBpath
+	//that says the user id and how long it took them to login (success or failure)
+	//includes the mode to see which password they were trying to log into with
 	firebase.database().ref(DBpath).push({
 		"user_id":user_id,
 		"duration":duration,
@@ -322,7 +319,8 @@ function writeSummary(){
 				"<li>Average Failed Login Time: "+userStatistics[T_LOGINS]["avgFailDuration"]+"</li></ul>"+
 		"</ul>");
 		
-	date = new Date();	
+	date = new Date();
+	firebase.database().ref("userCredentials/"+user_id+"/userstatistics/").push({"time":date,"stats":userStatistics});	
 
 }
 /* ================================================
@@ -333,7 +331,7 @@ function createPWDStep(mode){
 	var lists = {}; //will contain the necessary details for the password
 	
 	/* Fetch list of all words used for the software from the database */
-	firebase.database().ref(LIST_VALUES_REF).on("value",function(snapshot){
+	firebase.database().ref("listValues/").on("value",function(snapshot){
 		var listValues = snapshot.val();				
 		makePWDStepPart(1,lists,listValues,mode);//create a password: 
 	});	
@@ -358,7 +356,6 @@ function showSuccessfulTryMsg(fieldID,chartID){
  */
 function showFailedTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).show();
-//	$("#"+chartID).hide();
 	$("#"+fieldID+" > ."+ANSWER_TOGGLE_CLASS).hide();
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).show();
 }
@@ -374,7 +371,6 @@ function hideTryMsg(fieldID,chartID){
 	$("#"+fieldID+" > ."+TRY_PWD_CLASS).hide();
 	$("#"+fieldID+" > ."+ANSWER_TOGGLE_CLASS).show();
 	$("#"+fieldID+" > ."+ FAILED_PWD_CLASS).hide();
-//	$("#"+chartID).hide();
 }
 
 /* ================================================*/
@@ -390,6 +386,13 @@ function retryPractice(fieldID, chartID,list, mode){
 		checkPWDPart(1,list,mode,new Date());
 	});	
 }
+
+/* ================================================*/
+/*
+ * Waits for a click on the button to keep the password. When clicked,
+ * the status messages are hidden and all the buttons are hidden, and the
+ * password is sent to the database and recorded
+ */
 function waitForSaveClick(fieldID,chartID,list,mode){
 	$("#"+fieldID+" > ."+SAVE_PWD_CLASS).unbind('click').click(function(){
 		addLog("save_login_pwd_requested",p_modeTypeString[mode],list);
@@ -435,7 +438,9 @@ function promptOnFailedTry(list, mode, startTime, endTime){
 /* ================================================*/
 /*
  * Creates a chart for a single set of words and awaits 
- * for the user to select one of the slices
+ * for the user to select one of the slices. Verifies if the selection was correct
+ * and invokes functions as appropriate to handle failed/successful login/selection
+ * This is for the practice password sessions.
  */
 function checkPWDPart(listNum, list, mode, startTime){
 	if (listNum==1)	addLog("started_password_attempt",p_modeTypeString[mode],list);	
@@ -464,7 +469,7 @@ function checkPWDPart(listNum, list, mode, startTime){
 	//give the current list a title if it doesnt already have one
 	list["title"] = titleList[mode];
 	//bind a click event to the answer toggle button 
-	//when clicked the answer will either show or not be hidden/slice is blacked/unblackened
+	//when clicked the answer will either show or not
 	$("."+ ANSWER_TOGGLE_CLASS).unbind('click').click(function(){
 		addLog("toggled_answer_visibility",p_modeTypeString[mode],list);
 		showAnswer = !showAnswer;
@@ -477,30 +482,38 @@ function checkPWDPart(listNum, list, mode, startTime){
 	createChart(listNum,list,chart_id_list[mode],selectHandler,mode);
 }
 
-
+/* ================================================*/
+/*
+ * Creates a chart for a single set of words and awaits 
+ * for the user to select one of the slices. Verifies if the selection was correct
+ * and invokes functions as appropriate to handle failed/successful login/selection
+ * This is for the test password sessions.
+ */
 function testPWDPart(listNum,list,mode,numFails,startTime){
 	var actionMsg = ""; //differs with modes
 	if (listNum==1) addLog("started_password_attempt",t_modeTypeString[mode],list);	
 	$("#test-field > h3").html("Testing your "+list["title"]+":");
-	$("#"+TESTING_ATTEMPTS_ID).html(numFails);
-	var fired = false;
+	$("#"+TESTING_ATTEMPTS_ID).html(numFails); //update the number of attempts count
+	var fired = false; //true if a slice has been selected
 	function selectHandler(chart) {
 		var selectedItem = chart.getSelection()[0];
 		if (selectedItem && !fired) {
-chart.clearChart();
+			chart.clearChart();
 			fired = true;
+			
+			//if the right word is chosen
 			if (list[listNum]["choice"] == DIRECTIONS[selectedItem.row] ){
 				addLog("select_correct_word",t_modeTypeString[mode],list);	
 				
-				if (listNum<NUM_LIST_PER_PWD) 
+				if (listNum<NUM_LIST_PER_PWD) //if there are remaining words to be selected
+				//show the user the next set of words
 					testPWDPart(++listNum,list,mode,numFails,startTime);
-				else if (listNum>=NUM_LIST_PER_PWD){
+				else if (listNum>=NUM_LIST_PER_PWD){// if this is the last word of the password
 					promptOnSuccessfulTest(list, mode,numFails,startTime,new Date());
 				}
 			}else {
 				//failed login:
 				addLog("selected_wrong_word",t_modeTypeString[mode],list);	
-			//	chart.clearChart();
 				promptOnFailedTest(list, mode, numFails,startTime,new Date());
 			}
 		}
@@ -509,6 +522,11 @@ chart.clearChart();
 	createChart(listNum,list,"test_chart_div",selectHandler,mode);
 	
 }
+
+/* ================================================*/
+/*
+ * Randomly chooses the next type of password to test and invokes functions to test it.
+ */
 function nextTest(){		
 	var count =0;
 	var modeToTest = -1;
@@ -518,52 +536,74 @@ function nextTest(){
 		}
 	}
 	delete modes[modeToTest];
+	//fetch from the database the password for this mode
 	firebase.database().ref("userCredentials/"+user_id+"/"+titleList[modeToTest]+"/").on("value",function(snapshot){
-		showAnswer=false;
+		showAnswer=false; //since we are testing, the ability to see the answer is turned off
 		testPWDPart(1,snapshot.val(),modeToTest,0,new Date());
 	});
 }
-
+/* ================================================*/
+/*
+ * Shows and alters html elements such that the appropriate message to see when a user has successfully done a
+ * a test is what is displayed
+ */
 function showSuccessfulTestMsg(numFails){
 	
-//	$("#"+TEST_CHART_ID).hide();
 	$("#"+SUCCESS_PWD_TEST_ID).show();
 	$("#"+TESTING_ATTEMPTS_ID).html(++numFails);
 	$("#"+TEST_PROCEED_PROMPT_ID).show();
 	$("#"+SUCCESS_INDV_TEST_ID).show();
 	if (numTested>=NUM_MODES) $("#"+TEST_BUTTON_ID).html("Done All Tests");
 }
+
+/* ================================================*/
+/*
+ * Awaits the user's attempt to attempt to start the next test
+ */
 function waitForNextTestClick(list,mode){
 	$("#"+TEST_BUTTON_ID).unbind('click').click(function(){
+		//hide all the buttons and the status messages for the password
 		numTested++;
 		$("#"+TEST_PROCEED_PROMPT_ID).hide();
 		$("#"+SUCCESS_INDV_TEST_ID).hide();
 		$("#"+SUCCESS_PWD_TEST_ID).hide();
 		$("#"+FAILED_INDV_TEST_ID).hide();
 		$("#"+FAILED_PWD_TEST_ID).hide();
+		
+		//if there is still more passwords left to test
 		if (numTested<=NUM_MODES){
 			addLog("started_testing_pwd",t_modeTypeString[mode],list);
 			nextTest();
 		}else {
+			//if the last password had just been tested
 			addLog("done_testing","testing",list);
-				//backup in case database is corrupted with the software bugging up
 			 
-			writeSummary();
+			writeSummary();//shows user their login statistics
 
 		}
 	});
 }
+
+/* ================================================*/
+/*
+ * If a user does a successful login, display the proper elements to
+ * let the user advance in the testing sessions as well as display 
+ * that they have succeeded
+ */
 function promptOnSuccessfulTest(list, mode,numFails,startTime, endTime){
 	addLog("successful_login",t_modeTypeString[mode],list);	
 	addLoginData(SUCCESS,(endTime-startTime)/1000,mode,"test");
-	//MAKE SEPARATE LOGIN COLLECTION FOR TEST
 	showSuccessfulTestMsg(numFails);
 	waitForNextTestClick(list,mode);
 
 }
-
+/* ================================================*/
+/*
+ * If a user does a failed login, display the proper elements to
+ * let the user retry the password, or if they have used up all their turns, to
+ * display the appropriate items so they can move on to the next test.
+ */
 function showFailedTestMsg(numFails){
-	//$("#"+TEST_CHART_ID).hide();
 	$("#"+FAILED_PWD_TEST_ID).show();	
 	
 	$("#"+TESTING_ATTEMPTS_ID).html(numFails);
@@ -575,18 +615,19 @@ function waitForTryAgainClick(list, mode,numFails){
 	
 	$("#"+TRY_PWD_TEST_ID).show();
 	$("#"+TRY_PWD_TEST_ID).unbind("click").click(function(){
+		//hides status messages and buttons
 		addLog("retry_login_requested",t_modeTypeString[mode],list);
 		$("#"+TEST_PROCEED_PROMPT_ID).hide();
 		$("#"+FAILED_INDV_TEST_ID).hide();
 		$("#"+FAILED_PWD_TEST_ID).hide();	
 		$("#"+TRY_PWD_TEST_ID).hide();
-		showAnswer=false;
-		testPWDPart(1,list,mode,numFails,new Date());
+		showAnswer=false;//hides answer
+		testPWDPart(1,list,mode,numFails,new Date());//creates set of words for user to choose from
 	});
 		
 }
 /* ================================================*/
-/* Called when user fails a test password attempt. Remprompts them as 
+/* Called when user fails a test password attempt. Reprompts them as 
  * appropriate or goes to test next password
  */
 function promptOnFailedTest(list, mode,numFails,startTime,endTime){
@@ -597,7 +638,7 @@ function promptOnFailedTest(list, mode,numFails,startTime,endTime){
 	
 	waitForNextTestClick(list,mode);
 	waitForTryAgainClick(list,mode,numFails);
-	
+	//if the user has no attempts left:
 	if (numFails>=MAX_LOGIN_FAILURES){
 		$("#"+TEST_CHART_ID).hide();
 		$("#"+FAILED_PWD_TEST_ID).hide();	
@@ -605,12 +646,15 @@ function promptOnFailedTest(list, mode,numFails,startTime,endTime){
 		addLog("exceeded_max_failed_logins",t_modeTypeString[mode],list);	
 		$("#"+TEST_PROCEED_PROMPT_ID).show();
 		$("#"+FAILED_INDV_TEST_ID).show();
+		//give the user only the option to test next password/be done testing
 	}else{
+		//if the user has attempts left, let them try again
 		waitForTryAgainClick(list, mode,numFails);
 	}
 
 }
 function updateDB(DBpath,data){	firebase.database().ref(DBpath).set(data);}
+
 /* ================================================*/
 /* Save a password to the database and move on to next password, or to testing,
  * as appropriate
@@ -633,6 +677,7 @@ function savePWD(userWordLists, mode){
 	}
 	//
 }
+
 /* ================================================*/
 /* After the shop password is made, it chooses a random password
  * to test
@@ -646,7 +691,7 @@ function testPWDS(userWordLists){
 	//remove from list of modes left
 	delete modes[modeToTest];
 	
-	
+	//fetch from the database the password specified
 	firebase.database().ref("userCredentials/"+user_id+"/"+titleList[modeToTest]+"/").on("value",function(snapshot){	
 		numTested++;
 		showAnswer=false;
@@ -877,7 +922,7 @@ function start() {
 		storageBucket: "comp-3008v2.appspot.com",
 		messagingSenderId: "483115186465"
 	};
-	firebase.initializeApp(config);//config one for actual testing - config2 for debugging
+	firebase.initializeApp(config);//config for actual testing - config2 for debugging
 	
 	/* activity starts being logged whenever the user clicks this button */
 	$("#start-process").unbind("click").click(function(){
