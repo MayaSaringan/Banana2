@@ -1,22 +1,44 @@
+<!---
+COMP 3008: Project 2
+Names:
+ *  Daniel Sturk(101036873)
+ *  Luke Connolly (100999531)
+ *	Maya Saringan (101001759)
+ * 	Vesh-Yami Diaby (100949894)
+ This designs the website that hosts our password scheme and the framework to test it.
+ Every step in our framework occurs in a single webpage, but are separated into different
+ div elements that are hidden until the user has progressed to a certain point in testing our
+ password scheme. All of the steps occur in a single page to ensure that the user goes 
+ through the pages in the order desired and cannot cut through to the middle of the
+ test by visiting a different page.
+ 
+ The elements are dynamically hidden and shown with the aid of jquery and javascript, the code for which
+ is in script.js. This script also handles creation of passwords and handles events that walks the user
+ through the testing process
+-->
 <html>
   <head>
-  <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
-    <!--Load the AJAX API--><script src="https://www.gstatic.com/firebasejs/3.2.0/firebase.js"></script>
+    <!--Uses a css style file from w3schools.com that is free to use-->
+	<link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <!--The database used is firebase-->
+	<script src="https://www.gstatic.com/firebasejs/3.2.0/firebase.js"></script>
     <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-<script src="script.js"></script>
-<script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="script.js"></script>
+	<script src="https://www.gstatic.com/firebasejs/4.12.1/firebase.js"></script>
 
   </head>
-
+	<body>
 	<div class="w3-container" style="text-align:center" >
 		<div style = "width: 800px;margin:50px auto;text-align:left;">
+			<!--Title that will always show on the top part of the page -->
 			<div style="width:100%;padding:10px;"><h2>COMP 3008 Random Password Generator</h2></div>
 			<div style="padding:10px 30px 10px 30px ;background-color:white;">
 				
 				<!-- FIRST "PAGE" USER SEES -->
 				<div id="introduction">
 					<p>Welcome User.</p>
+					<!-- instructions -->
 					<p>You will be assigned 3 unique passwords, one for your email, banking and shopping.
 					For each password, you will be presented with 
 					7 unique sets of words total, each composing of 8 words, and you will be assigned to select one of them.
@@ -25,6 +47,7 @@
 					ability to recognize familiar words.</p>
 					<br>
 					<p>Anytime you are ready, click the button below to generate your passwords!</p>
+					<!-- When the button below is clicked, an email password is generated and the user is prompted to practice it -->
 					<button  id ="start-process" class="w3-button w3-teal">Start!</button>
 					<br>
 				</div>
@@ -39,15 +62,19 @@
 						correspond to that slice.</p>
 						<p>If you select the wrong word, you will restart from the first set.</p>
 					</div>
-					<p class="failed-pwd" style="display:none">
-					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<!--displays when a user fails entering their password -->
+					<p class="failed-pwd" style="display:none">You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<!-- displays when a user enters their password correctly-->
 					<p class="success-pwd" style="display:none">
 					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
 					Move on to the next password.</p>
+					<!-- displays when after the user fails/correctly enters their password-->
 					<button class="try-pwd" style="display:none">Try again!</button>
+					<!-- shows after the user's first attempt to enter their password -->
 					<button class="answer-toggle" style="display:none">Show/Hide answer</button>
+					<!-- shows after the user has done a successful log in -->
 					<button class="save-pwd" style="display:none">Keep Password</button>		
-					<!--will contain the chart--->
+					<!--will contain the chart to display the words--->
 					<div id="email_chart_div" style="width:600; height:500;margin:0 auto;"></div>
 						
 								
@@ -65,16 +92,19 @@
 						correspond to that slice.</p>
 						<p>If you select the wrong word, you will restart from the first set.</p>
 					</div>
-						
-					<p class="failed-pwd" style="display:none">
-					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<!--displays when a user fails entering their password -->
+					<p class="failed-pwd" style="display:none">You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<!-- displays when a user enters their password correctly-->
 					<p class="success-pwd" style="display:none">
 					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
 					Move on to the next password.</p>
+					<!-- displays when after the user fails/correctly enters their password-->
 					<button class="try-pwd" style="display:none">Try again!</button>
+					<!-- shows after the user's first attempt to enter their password -->
 					<button class="answer-toggle" style="display:none">Show/Hide answer</button>
+					<!-- shows after the user has done a successful log in -->
 					<button class="save-pwd" style="display:none">Keep Password</button>		
-					<!--will contain the chart--->
+					<!--will contain the chart to display the words--->
 					<div id="bank_chart_div" style="width:600; height:500;margin:0 auto;"></div>
 								
 				</div>
@@ -90,15 +120,19 @@
 						correspond to that slice.</p>
 						<p>If you select the wrong word, you will restart from the first set.</p>
 					</div>
-					<p class="failed-pwd" style="display:none">
-					You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<!--displays when a user fails entering their password -->
+					<p class="failed-pwd" style="display:none">You selected the wrong word. Try entering the password again (you will start at the first set).</p>
+					<!-- displays when a user enters their password correctly-->
 					<p class="success-pwd" style="display:none">
 					You have successfully entered the password! Keep practicing your password if you want. Once you think you remember you password enough,
 					Move on to the next password.</p>
+					<!-- displays when after the user fails/correctly enters their password-->
 					<button class="try-pwd" style="display:none">Try again!</button>
+					<!-- shows after the user's first attempt to enter their password -->
 					<button class="answer-toggle" style="display:none">Show/Hide answer</button>
-					<button class="save-pwd" style="display:none">Keep Password</button>	
-					<!--will contain the chart--->
+					<!-- shows after the user has done a successful log in -->
+					<button class="save-pwd" style="display:none">Keep Password</button>		
+					<!--will contain the chart to display the words--->
 					<div id="shop_chart_div" style="width:600; height:500;margin:0 auto;"></div>
 						
 									
@@ -117,21 +151,27 @@
 							</p>
 						</div>
 					</div>	
-						<!--says status of the password: failed or success, and remaining attempts left-->
+						<!--says amount of attempts done, dynamically changed value-->
 						<p>Attempted <span  id="testing-attempts">0</span> times.</p>
+						<!--shows if a user fails an attempt to log in-->
 						<p id="failed-pwd-test" style="display:none">
 						You selected the wrong word. Failed password attempt.</p>
+						<!--shows if a user succeeds at an attempt to log in-->
 						<p id="success-pwd-test" style="display:none">
 						Successful password attempt.</p>
+						<!--shows if a user fails to log in to give them a chance to retry, only shows if the user is not on their 3rd fail yet-->
 						<button id="try-test" style="display:none">Try again!</button>
+						<!--shows if a user fails to log in 3 times, or successfully logs in-->
 						<div id ="test-pwd-prompt"  style="display:none">
+							<!--shows only if a user must proceed because they successfully logged in-->
 							<p id="test-success-indv" style="display:none">You can now proceed to test the other passwords.</p>
+							<!--shows only if a user must proceed because they failed too many times-->
 							<p id="test-failed-indv" style="display:none">You have used up all possible failed attempts.</p>
 							<p>Proceed to testing the next password</p>
 							<!--show button when success, or exceeded fail limit--->
 							<button id="test-next-pwd">Test Next Password!</button>
 						</div>
-						<!--will contain the chart--->
+						<!--will contain the chart to display the words--->
 						<div id="test_chart_div" style="width:600; height:500;"></div>
 						
 					
@@ -147,14 +187,13 @@
 						<p>
 						Thank you for trying our software. Here are a few statistics:
 						</p>
-						
+						<!--populated with statistics by script.js--->
 						<div id="user-statistics">
 							<p>Nothing here yet...</p>
 							
 						</div>
 				</div>
 				
-
 				
 			</div>
 		</div>
